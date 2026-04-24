@@ -60,11 +60,11 @@ Deno.serve(async () => {
     }
 
     const message =
-      `📋 <b>Notis Kehadiran</b>\n\n` +
-      `Ibu/Bapa yang dihormati,\n\n` +
-      `Anak anda <b>${student.name}</b>${cls ? ` (${cls})` : ''} dari <b>Caterpillar ${branch}</b> ` +
-      `<b>tidak hadir</b> ke sekolah hari ini, <b>${today}</b>.\n\n` +
-      `Sila pilih sebab ketidakhadiran:`
+    `📋 <b>Attendance Notice</b>\n\n` +
+    `Dear Parent/Guardian,\n\n` +
+    `We would like to inform you that your child <b>${student.name}</b>${cls ? ` (${cls})` : ''} from <b>Caterpillar ${branch}</b> ` +
+    `was absent from school today, <b>${today}</b>.\n\n` +
+    `Kindly select the reason for the absence:`;
 
     // Inline keyboard with reason buttons
     const keyboard = {
@@ -78,7 +78,12 @@ Deno.serve(async () => {
           { text: '👨‍👩‍👧 Family matter', callback_data: `reason:${record.id}:family_matter` },
         ],
         [
-          { text: '—  No reason',      callback_data: `reason:${record.id}:no_reason` },
+          { text: '🏥 Medical appt',   callback_data: `reason:${record.id}:medical_appointment` },
+          { text: '🚗 Transport issue', callback_data: `reason:${record.id}:transport_issue` },
+        ],
+        [
+          { text: '🌧️ Bad weather',    callback_data: `reason:${record.id}:bad_weather` },
+          { text: '— No reason',       callback_data: `reason:${record.id}:no_reason` },
         ],
       ]
     }

@@ -26,3 +26,21 @@
   to   { transform: translateY(0);    opacity: 1; }
 }
 .slide-up { animation: slideUp 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); }
+
+:root {
+  --bg: #f8f8f6;
+  --surface: #ffffff;
+  --border: #e8e8e4;
+  --text: #1a1a1a;
+  --muted: #888888;
+  --hint: #aaaaaa;
+  --nav-bg: #ffffff;
+  --present: #2d7a4f;
+  --late: #9a6b1a;
+  --absent: #b03030;
+  --holiday: #4a6fa5;
+  --present-bg: #eef6f1;
+  --late-bg: #fdf4e7;
+  --absent-bg: #fdeaea;
+  --holiday-bg: #edf1f8;
+}

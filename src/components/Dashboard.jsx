@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { getDailySummary, supabase } from '../lib/supabase'
+import { MdOutlineAdminPanelSettings, MdOutlineSchool } from 'react-icons/md'
 
 const BRANCH_COLORS = {
   'Caterpillar Playtime KL Traders':  '#2d7a4f',
@@ -15,7 +16,7 @@ const STATUS = {
   HOLIDAY: { color: 'var(--holiday)', bg: 'var(--holiday-bg)', label: 'Holiday' },
 }
 
-export default function Dashboard({ t }) {
+export default function Dashboard({ t, session, isAdmin }) {
   const [summary, setSummary]           = useState([])
   const [loading, setLoading]           = useState(true)
   const [activeStatus, setActiveStatus] = useState(null)
@@ -24,10 +25,17 @@ export default function Dashboard({ t }) {
   const [loadingStudents, setLoadingStudents] = useState(false)
 
   useEffect(() => {
-    getDailySummary()
-      .then(setSummary)
-      .catch(console.error)
-      .finally(() => setLoading(false))
+  getDailySummary()
+    .then(data => {
+      if (session?.role === 'teacher' && session?.branch_id) {
+        const branchName = session?.branches?.name
+        setSummary(data.filter(b => b.branch === branchName))
+      } else {
+        setSummary(data)
+      }
+    })
+    .catch(console.error)
+    .finally(() => setLoading(false))
   }, [])
 
   async function handleStatusClick(status, branchName = null) {
@@ -36,21 +44,28 @@ export default function Dashboard({ t }) {
     }
     setActiveStatus(status); setActiveBranch(branchName); setLoadingStudents(true)
     const today = new Date().toISOString().split('T')[0]
+
     let query = supabase
       .from('attendance')
       .select('*, absence_reason, students(name, student_no, branches(name))')
-      .eq('date', today).eq('status', status)
-    if (branchName) {
+      .eq('date', today)
+      .eq('status', status)
+
+    // Teachers can only see their branch
+    if (session?.role === 'teacher' && session?.branch_id) {
+      query = query.eq('branch_id', session.branch_id)
+    } else if (branchName) {
       const { data: branch } = await supabase.from('branches').select('id').eq('name', branchName).single()
       if (branch) query = query.eq('branch_id', branch.id)
     }
+
     const { data } = await query
     setStudents(data || [])
     setLoadingStudents(false)
   }
 
   // Add this state at the top of Dashboard component
-const [overrideStudent, setOverrideStudent] = useState(null)
+  const [overrideStudent, setOverrideStudent] = useState(null)
 
   // Add this function
   async function handleOverride(attendanceId, newStatus) {
@@ -156,7 +171,7 @@ async function runManualAttendance() {
   const s = (style) => ({ style })
 
   return (
-    <div style={{ minHeight: '100%', background: 'var(--bg)', paddingBottom: 80, overflowY: 'auto' }}>
+    <div style={{ minHeight: '100%', background: 'var(--bg)', paddingBottom: 200, overflowY: 'auto' }}>
 
       {/* Header */}
       <div style={{ background: 'var(--surface)', borderBottom: '0.5px solid var(--border)', padding: '52px 20px 16px' }}>
@@ -164,11 +179,22 @@ async function runManualAttendance() {
           <div>
             <div style={{ fontSize: 11, color: 'var(--muted)', letterSpacing: '0.08em', marginBottom: 4, textTransform: 'uppercase' }}>{today}</div>
             <div style={{ fontSize: 22, fontWeight: 500, color: 'var(--text)' }}>Today's overview</div>
+            {/* Session info */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 6, flexWrap: 'wrap' }}>
+              {session?.role === 'admin'
+                ? <>
+                    <MdOutlineAdminPanelSettings size={14} color='var(--present)' />
+                    <span style={{ fontSize: 12, fontWeight: 500, color: 'var(--present)' }}>Admin</span>
+                  </>
+                : <>
+                    <MdOutlineSchool size={14} color='var(--holiday)' />
+                    <span style={{ fontSize: 12, fontWeight: 500, color: 'var(--holiday)' }}>
+                      {session?.teacherName} · {session?.branches?.name?.replace('Caterpillar Playtime ', '')}
+                    </span>
+                  </>
+              }
+            </div>
           </div>
-          <button onClick={runManualAttendance}
-            style={{ background: 'var(--bg)', border: '0.5px solid var(--border)', borderRadius: 10, padding: '8px 14px', fontSize: 12, color: 'var(--muted)', cursor: 'pointer', whiteSpace: 'nowrap' }}>
-            ▶ Run now
-          </button>
         </div>
       </div>
 
@@ -229,8 +255,7 @@ async function runManualAttendance() {
                       borderBottom: overrideStudent === a.id ? 'none' : i < students.length - 1 ? '0.5px solid var(--border)' : 'none',
                       cursor: 'pointer', background: overrideStudent === a.id ? 'var(--bg)' : 'transparent',
                     }}
-                      onClick={() => setOverrideStudent(overrideStudent === a.id ? null : a.id)}>
-                      <div style={{ width: 32, height: 32, borderRadius: '50%', background: STATUS[a.status]?.bg || STATUS[activeStatus].bg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 500, color: STATUS[a.status]?.color || STATUS[activeStatus].color, flexShrink: 0 }}>
+                      onClick={() => isAdmin && setOverrideStudent(overrideStudent === a.id ? null : a.id)}>                      <div style={{ width: 32, height: 32, borderRadius: '50%', background: STATUS[a.status]?.bg || STATUS[activeStatus].bg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 500, color: STATUS[a.status]?.color || STATUS[activeStatus].color, flexShrink: 0 }}>
                         {a.students?.name?.charAt(0)}
                       </div>
                       <div style={{ flex: 1, minWidth: 0 }}>
@@ -259,7 +284,7 @@ async function runManualAttendance() {
                     </div>
 
                     {/* Status override picker */}
-                    {overrideStudent === a.id && (
+                    {overrideStudent === a.id && isAdmin && (
                       <div style={{ padding: '8px 16px 12px', borderBottom: i < students.length - 1 ? '0.5px solid var(--border)' : 'none', background: 'var(--bg)' }}>
                         <div style={{ fontSize: 10, color: 'var(--muted)', marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Change status to:</div>
                         <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
@@ -291,7 +316,6 @@ async function runManualAttendance() {
           ) : summary.map(branch => {
             const color = BRANCH_COLORS[branch.branch] || 'var(--present)'
             const rate = branch.attendance_rate_pct || 0
-            console.log("haha", branch);
             return (
               <div key={branch.branch} style={{ background: 'var(--surface)', border: '0.5px solid var(--border)', borderRadius: 12, padding: 16 }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 10 }}>

@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { getStudents, getBranches, addHoliday, supabase } from '../lib/supabase'
 
-export default function Holidays({ t }) {
+export default function Holidays({ t, isAdmin }) {
   const [holidays, setHolidays]     = useState([])
   const [closures, setClosures]     = useState([])
   const [students, setStudents]     = useState([])
@@ -125,15 +125,17 @@ export default function Holidays({ t }) {
       <div style={{ background: 'var(--surface)', borderBottom: '0.5px solid var(--border)', padding: '52px 20px 0' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
           <div style={{ fontSize: 22, fontWeight: 500, color: 'var(--text)' }}>Time Off</div>
-          <button
-            onClick={() => activeTab === 'holidays' ? setShowForm(true) : setShowClosureForm(true)}
-            style={{
-              background: 'var(--present)',
-              color: '#fff', border: 'none', borderRadius: 20,
-              padding: '8px 16px', fontSize: 13, fontWeight: 500, cursor: 'pointer'
-            }}>
-            + Add
-          </button>
+          {(activeTab === 'holidays' || (activeTab === 'closures' && isAdmin)) && (
+            <button
+              onClick={() => activeTab === 'holidays' ? setShowForm(true) : setShowClosureForm(true)}
+              style={{
+                background: 'var(--present)',
+                color: '#fff', border: 'none', borderRadius: 20,
+                padding: '8px 16px', fontSize: 13, fontWeight: 500, cursor: 'pointer'
+              }}>
+              + Add
+            </button>
+          )}
         </div>
 
         {/* Tabs */}
@@ -240,16 +242,18 @@ export default function Holidays({ t }) {
                         {isUpcoming(c) && (
                           <span style={{ background: 'var(--holiday-bg)', color: 'var(--holiday)', fontSize: 10, padding: '3px 10px', borderRadius: 20, fontWeight: 500, flexShrink: 0 }}>Upcoming</span>
                         )}
-                        <button onClick={e => { e.stopPropagation(); setOpenClosureMenu(isOpen ? null : c.id) }}
-                          style={{
-                            padding: '6px 12px', borderRadius: 8, fontSize: 12, cursor: 'pointer',
-                            flexShrink: 0, whiteSpace: 'nowrap', transition: 'all 0.15s',
-                            background: isOpen ? 'var(--border)' : 'var(--bg)',
-                            border: '0.5px solid var(--border)',
-                            color: isOpen ? 'var(--text)' : 'var(--muted)',
-                          }}>
-                          Actions
-                        </button>
+                        {isAdmin && (
+                          <button onClick={e => { e.stopPropagation(); setOpenClosureMenu(isOpen ? null : c.id) }}
+                            style={{
+                              padding: '6px 12px', borderRadius: 8, fontSize: 12, cursor: 'pointer',
+                              flexShrink: 0, whiteSpace: 'nowrap', transition: 'all 0.15s',
+                              background: isOpen ? 'var(--border)' : 'var(--bg)',
+                              border: '0.5px solid var(--border)',
+                              color: isOpen ? 'var(--text)' : 'var(--muted)',
+                            }}>
+                            Actions
+                          </button>
+                        )}
                       </div>
 
                       {isOpen && (

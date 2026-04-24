@@ -19,7 +19,7 @@ const translations = {
     nav_students: 'Students',
     nav_holidays: 'Holidays',
     nav_events: 'Events',
-    nav_reports: 'Reports',
+    nav_admin: 'Admin',
     // Dashboard
     dash_title: 'Today\'s Overview',
     dash_branch: 'Branch',
@@ -62,7 +62,7 @@ const translations = {
     nav_students: 'Pelajar',
     nav_holidays: 'Cuti',
     nav_events: 'Acara',
-    nav_reports: 'Laporan',
+    nav_admin: 'Admin',
     // Dashboard
     dash_title: 'Ringkasan Hari Ini',
     dash_branch: 'Cawangan',

@@ -1,7 +1,18 @@
 import { useEffect, useState } from 'react'
 import { getBranches, supabase } from '../lib/supabase'
 
-const AGE_GROUPS = ['Infant', 'Toddler', 'Playgroup', 'Preschool']
+const AGE_GROUPS = ['3-6months', '7-12months', '1year', '2year', '3year', '4year', '5year', '6year']
+
+const AGE_GROUP_LABELS = {
+  '3-6months':  '3–6 Months',
+  '7-12months': '7–12 Months',
+  '1year': '1 Year',
+  '2year': '2 Years',
+  '3year': '3 Years',
+  '4year': '4 Years',
+  '5year': '5 Years',
+  '6year': '6 Years',
+}
 
 export default function Events({ t }) {
   const [events, setEvents]     = useState([])
@@ -72,7 +83,7 @@ export default function Events({ t }) {
     }
   }
 
-  const branchName = (id) => branches.find(b => b.id === id)?.name?.replace('Caterpillar_', '') || id
+  const branchName = (id) => branches.find(b => b.id === id)?.name?.replace('Caterpillar Playtime ', '') || id  
 
   return (
     <div style={{ minHeight: '100%', background: 'var(--bg)', paddingBottom: 80 }}>
@@ -154,9 +165,9 @@ export default function Events({ t }) {
                     <div style={{ fontSize: 10, color: 'var(--muted)', marginBottom: 4, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Age groups</div>
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
                     {ev.age_groups.map(g => (
-                        <span key={g} style={{ fontSize: 11, padding: '2px 8px', borderRadius: 20, background: 'var(--holiday-bg)', color: 'var(--holiday)' }}>
-                        {g}
-                        </span>
+                      <span key={g} style={{ fontSize: 11, padding: '2px 8px', borderRadius: 20, background: 'var(--holiday-bg)', color: 'var(--holiday)' }}>
+                        {AGE_GROUP_LABELS[g] || g}
+                      </span>
                     ))}
                     </div>
                 </div>
@@ -236,7 +247,7 @@ export default function Events({ t }) {
                           border: `0.5px solid ${selected ? 'var(--holiday)' : 'var(--border)'}`,
                           fontWeight: selected ? 500 : 400,
                         }}>
-                        {g}
+                        {AGE_GROUP_LABELS[g]}
                       </button>
                     )
                   })}

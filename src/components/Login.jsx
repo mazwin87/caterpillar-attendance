@@ -52,75 +52,89 @@ export default function Login({ onLogin }) {
 
   const inp = {
     style: {
-      width: '100%', background: '#f8f8f6', border: '0.5px solid #e8e8e4',
-      borderRadius: 10, padding: '13px 16px', fontSize: 15,
-      color: '#1a1a1a', outline: 'none',
+      width: '100%',
+      background: 'var(--bg)',
+      border: '0.5px solid var(--border)',
+      borderRadius: 10,
+      padding: '13px 16px',
+      fontSize: 15,
+      color: 'var(--text)',
+      outline: 'none',
     }
   }
 
   return (
-    <div style={{ minHeight: '100vh', background: '#f8f8f6', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
+    <div style={{ minHeight: '100vh', background: 'var(--bg)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
       <div style={{ width: '100%', maxWidth: 360 }}>
 
         {/* Logo */}
         <div style={{ textAlign: 'center', marginBottom: 36 }}>
-          <div style={{ width: 64, height: 64, background: '#2d7a4f', borderRadius: 18, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 30, margin: '0 auto 16px' }}>🐛</div>
-          <div style={{ fontSize: 22, fontWeight: 500, color: '#1a1a1a' }}>Caterpillar Playtime</div>
-          <div style={{ fontSize: 13, color: '#888', marginTop: 4 }}>Attendance System</div>
+          <img src="/logo.png" alt="Caterpillar Playtime" style={{ width: 100, height: 100, objectFit: 'contain', margin: '0 auto 16px', display: 'block' }} />          <div style={{ fontSize: 22, fontWeight: 500, color: 'var(--text)' }}>Caterpillar Playtime</div>
+          <div style={{ fontSize: 13, color: 'var(--muted)', marginTop: 4 }}>Attendance System</div>
         </div>
 
         {/* Form */}
-        <form onSubmit={handleLogin} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-          <input
-            required
-            value={username}
-            onChange={e => checkUsername(e.target.value)}
-            placeholder="Username"
-            autoCapitalize="none"
-            autoCorrect="off"
-            {...inp}
-          />
-          <input
-            required
-            type="password"
-            value={password}
-            onChange={e => setPassword(e.target.value)}
-            placeholder="Password"
-            {...inp}
-          />
+        <div style={{ background: 'var(--surface)', border: '0.5px solid var(--border)', borderRadius: 16, padding: 24 }}>
+          <form onSubmit={handleLogin} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
 
-          {/* Teacher name field — only shows for teacher accounts */}
-          {isTeacher && (
-            <div style={{ animation: 'slideDown 0.2s ease' }}>
-              <input
-                required
-                value={teacherName}
-                onChange={e => setTeacherName(e.target.value)}
-                placeholder="Your name e.g. Cikgu Siti"
-                {...inp}
-              />
-            </div>
-          )}
+            <input
+              required
+              value={username}
+              onChange={e => checkUsername(e.target.value)}
+              placeholder="Username"
+              autoCapitalize="none"
+              autoCorrect="off"
+              {...inp}
+            />
 
-          {error && (
-            <div style={{ background: '#fdeaea', border: '0.5px solid #f09595', borderRadius: 8, padding: '10px 14px', fontSize: 13, color: '#b03030' }}>
-              {error}
-            </div>
-          )}
+            <input
+              required
+              type="password"
+              value={password}
+              onChange={e => setPassword(e.target.value)}
+              placeholder="Password"
+              {...inp}
+            />
 
-          <button
-            type="submit"
-            disabled={loading}
-            style={{ background: '#2d7a4f', color: '#fff', border: 'none', borderRadius: 10, padding: '14px', fontSize: 15, fontWeight: 500, cursor: 'pointer', marginTop: 4, opacity: loading ? 0.7 : 1 }}>
-            {loading ? 'Signing in...' : 'Sign in'}
-          </button>
-        </form>
+            {/* Teacher name — only shows for teacher accounts */}
+            {isTeacher && (
+              <div style={{ animation: 'slideDown 0.2s ease' }}>
+                <input
+                  required
+                  value={teacherName}
+                  onChange={e => setTeacherName(e.target.value)}
+                  placeholder="Your name e.g. Cikgu Siti"
+                  {...inp}
+                />
+              </div>
+            )}
 
-        <div style={{ textAlign: 'center', marginTop: 24, fontSize: 12, color: '#bbb' }}>
+            {error && (
+              <div style={{ background: 'var(--absent-bg)', border: '0.5px solid var(--absent)', borderRadius: 8, padding: '10px 14px', fontSize: 13, color: 'var(--absent)' }}>
+                {error}
+              </div>
+            )}
+
+            <button
+              type="submit"
+              disabled={loading}
+              style={{ background: 'var(--present)', color: '#fff', border: 'none', borderRadius: 10, padding: 14, fontSize: 15, fontWeight: 500, cursor: 'pointer', marginTop: 4, opacity: loading ? 0.7 : 1 }}>
+              {loading ? 'Signing in...' : 'Sign in'}
+            </button>
+          </form>
+        </div>
+
+        <div style={{ textAlign: 'center', marginTop: 16, fontSize: 12, color: 'var(--muted)' }}>
           Session expires at midnight
         </div>
+
+      <div style={{ textAlign: 'center', marginTop: 12 }}>
+          <a href="/guide.html" target="_blank"
+            style={{ fontSize: 12, color: '#2d7a4f', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+            📖 View Teacher Guide
+          </a>
+        </div>
       </div>
-      <style>{`@keyframes slideDown { from { opacity:0; transform:translateY(-8px); } to { opacity:1; transform:translateY(0); } }`}</style>
     </div>
   )
 }
