@@ -52,7 +52,7 @@ export default function App() {
   const isAdmin = session?.role === 'admin'
 
   return (
-    <BrowserRouter>
+    <BrowserRouter basename="/cpcc">
       <Routes>
         {/* Public route — no auth needed */}
         <Route path="/receipt/:id" element={<Receipt />} />
