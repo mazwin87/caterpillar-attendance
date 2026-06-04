@@ -364,7 +364,7 @@ if (payments.length > 0) {
       // Build inline buttons — one per month receipt
       const inline_keyboard = sortedPayments.map(p => ([{
         text: `🧾 ${p.month} ${p.year} — RM ${parseFloat(p.amount).toFixed(2)}`,
-        url: `https://ai.nimonimo.tech/receipt/${p.id}`
+        url: `https://nimonimo.tech/receipt/${p.id}`
       }]))
 
       const res = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {

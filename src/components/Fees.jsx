@@ -249,7 +249,7 @@ export default function Fees({ session }) {
         if (!parent?.telegram_chat_id) { failed++; continue }
 
         const BOT_TOKEN  = '8728256755:AAHlNR5j7UlZqi-y4IomHu2pD0kSrBLyZuY'
-        const receiptUrl = `https://ai.nimonimo.tech/receipt/${payment.id}`
+        const receiptUrl = `https://nimonimo.tech/receipt/${payment.id}`
 
         const msg =
           `🧾 *Receipt — ${payment.receipt_no}*\n\n` +
@@ -313,7 +313,7 @@ export default function Fees({ session }) {
       }
 
       const BOT_TOKEN  = '8728256755:AAHlNR5j7UlZqi-y4IomHu2pD0kSrBLyZuY'
-      const receiptUrl = `https://ai.nimonimo.tech/receipt/${payment.id}`
+      const receiptUrl = `https://nimonimo.tech/receipt/${payment.id}`
 
       const msg =
         `🧾 *Receipt — ${payment.receipt_no}*\n\n` +
