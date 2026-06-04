@@ -152,7 +152,6 @@ export default function Students({ t, session }) {
     if (!form.monthly_fee)         newErrors.monthly_fee   = 'Required'
     if (!form.parent_name.trim())  newErrors.parent_name   = 'Required'
     if (!form.parent_phone.trim()) newErrors.parent_phone  = 'Required'
-    if (!form.parent_email.trim()) newErrors.parent_email = 'Required'
     if (Object.keys(newErrors).length > 0) { setErrors(newErrors); return }
     setErrors({})
     setSaving(true)
@@ -549,8 +548,7 @@ export default function Students({ t, session }) {
 
               <input value={form.parent_email} type="email"
                 onChange={e => { setForm(f => ({ ...f, parent_email: e.target.value })); setErrors(f => ({ ...f, parent_email: '' })) }}
-                placeholder="Email" {...inp} />
-              {errors.parent_email && <div style={{ fontSize: 11, color: 'var(--absent)', marginTop: -6 }}>⚠️ Email is required</div>}
+                placeholder="Email (optional)" {...inp} />
 
               <div style={{ display: 'flex', gap: 10, marginTop: 8 }}>
                 <button type="button" onClick={() => { setShowForm(false); setErrors({}) }}
