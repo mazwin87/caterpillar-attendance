@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom'
-import { MdOutlineAssessment, MdOutlineReceipt, MdOutlineUploadFile, MdOutlineReceiptLong } from 'react-icons/md'
+import { MdOutlineAssessment, MdOutlineReceipt, MdOutlineUploadFile, MdOutlineReceiptLong, MdOutlineManageAccounts } from 'react-icons/md'
 
 export default function Admin({ session }) {
   const navigate = useNavigate()
@@ -36,6 +36,14 @@ export default function Admin({ session }) {
       color: '#7b1fa2',
       bg: '#f3e5f5',
       to: '/manual-receipt',
+    },
+    {
+      icon: MdOutlineManageAccounts,
+      title: 'Manage Users',
+      desc: 'Reset passwords for admin and teacher accounts.',
+      color: '#c0392b',
+      bg: '#fdecea',
+      to: '/manage-users',
     },
   ]
 

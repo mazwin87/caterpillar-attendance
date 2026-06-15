@@ -1,0 +1,36 @@
+USER MANAGEMENT UPDATE
+======================
+
+We added a new Manage Users section under the Admin Panel with the following roles:
+
+ROLES
+-----
+
+Superadmin
+- Can see and reset passwords for all Admins and Teachers across all branches
+- Access via Admin Panel > Manage Users
+
+Admin
+- Can see and reset passwords for Teachers in their branch
+- Access via Admin Panel > Manage Users
+
+Teacher
+- No access to user management
+
+
+HOW TO RESET A PASSWORD
+-----------------------
+
+1. Go to Admin Panel
+2. Tap Manage Users
+3. Find the user and tap Reset
+4. Enter and confirm the new password
+5. Tap Reset Password
+6. Share the new password with the user directly
+
+
+NOTES
+-----
+- Passwords are reset manually by a higher-level user
+- Teachers cannot change their own passwords
+- Superadmin is the master account that can manage all other accounts including admins

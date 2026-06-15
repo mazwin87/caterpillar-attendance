@@ -13,8 +13,10 @@ import Events from './components/Events'
 import Login from './components/Login'
 import Receipt from './components/Receipt'
 import Importer from './components/Importer'
-import { getSession, clearSession } from './lib/auth'
+import { getSession, clearSession, updateSession } from './lib/auth'
 import ManualReceipt from './components/ManualReceipt'
+import ChangePassword from './components/ChangePassword'
+import ManageUsers from './components/ManageUsers'
 
 export default function App() {
   const { lang, setLang, t } = useLanguage()
@@ -42,6 +44,11 @@ export default function App() {
     setSession({ ...user, teacherName })
   }
 
+  function handlePasswordChanged() {
+    updateSession({ must_change_password: false })
+    setSession(prev => ({ ...prev, must_change_password: false }))
+  }
+
   function handleLogout() {
     clearSession()
     setSession(null)
@@ -49,7 +56,8 @@ export default function App() {
 
   if (checking) return <div style={{ color: 'white' }}>Loading...</div>
 
-  const isAdmin = session?.role === 'admin'
+  const isAdmin      = session?.role === 'admin' || session?.role === 'superadmin'
+  const isSuperAdmin = session?.role === 'superadmin'
 
   return (
     <BrowserRouter basename="/cpcc">
@@ -61,6 +69,8 @@ export default function App() {
         <Route path="*" element={
           !session
             ? <Login onLogin={handleLogin} />
+            : session.must_change_password
+            ? <ChangePassword session={session} onDone={handlePasswordChanged} />
             : (
               <div style={{ minHeight: '100vh', background: 'var(--bg)' }}>
                 <Routes>
@@ -70,11 +80,12 @@ export default function App() {
                   <Route path="/students"  element={<Students t={t} session={session} />} />
                   <Route path="/holidays"  element={<Holidays t={t} isAdmin={isAdmin} />} />
                   <Route path="/events"    element={<Events t={t} />} />
-                  {isAdmin && <Route path="/admin"   element={<Admin session={session} />} />}
-                  {isAdmin && <Route path="/reports" element={<Reports t={t} />} />}
-                  {isAdmin && <Route path="/fees"    element={<Fees session={session} />} />}
-                  {isAdmin && <Route path="/import" element={<Importer />} />}
+                  {isAdmin && <Route path="/admin"          element={<Admin session={session} />} />}
+                  {isAdmin && <Route path="/reports"        element={<Reports t={t} />} />}
+                  {isAdmin && <Route path="/fees"           element={<Fees session={session} />} />}
+                  {isAdmin && <Route path="/import"         element={<Importer />} />}
                   {isAdmin && <Route path="/manual-receipt" element={<ManualReceipt session={session} />} />}
+                  {isAdmin && <Route path="/manage-users"   element={<ManageUsers session={session} />} />}
                   <Route path="*" element={<Navigate to="/scanner" replace />} />
                 </Routes>
                 <Navbar t={t} isAdmin={isAdmin} session={session} onLogout={handleLogout} />

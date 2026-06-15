@@ -1,0 +1,594 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Caterpillar Playtime — Teacher Guide</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Trebuchet MS', Arial, sans-serif; background: #f0f0f0; color: #1a1a1a; }
+
+  .slide {
+    width: 960px; min-height: 540px; margin: 32px auto;
+    background: #fff; border-radius: 16px; overflow: hidden;
+    box-shadow: 0 4px 32px rgba(0,0,0,0.12);
+    display: grid; grid-template-columns: 260px 1fr;
+    page-break-after: always; position: relative;
+  }
+  .slide.full { grid-template-columns: 1fr; }
+
+  .panel {
+    background: #1a3c2e; padding: 36px 24px;
+    display: flex; flex-direction: column; justify-content: space-between;
+  }
+  .panel-top { display: flex; flex-direction: column; gap: 16px; }
+  .tab-badge {
+    display: inline-flex; align-items: center; gap: 8px;
+    background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.12);
+    border-radius: 24px; padding: 6px 14px; font-size: 12px; color: #9fd4b5; width: fit-content;
+  }
+  .tab-num {
+    width: 20px; height: 20px; background: #2d7a4f; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 700; color: #fff;
+  }
+  .panel h2 { font-size: 24px; font-weight: 700; color: #fff; line-height: 1.2; }
+  .panel p  { font-size: 12px; color: #9fd4b5; line-height: 1.6; }
+
+  .content { padding: 28px 36px; display: flex; flex-direction: column; gap: 18px; }
+
+  .section-label { font-size: 11px; font-weight: 600; color: #888; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 8px; }
+
+  .steps { display: flex; flex-direction: column; gap: 11px; }
+  .step  { display: flex; gap: 12px; align-items: flex-start; }
+  .step-num {
+    width: 26px; height: 26px; background: #2d7a4f; border-radius: 50%;
+    color: #fff; font-size: 12px; font-weight: 700;
+    display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+  }
+  .step-body h4 { font-size: 13px; font-weight: 600; color: #1a3c2e; margin-bottom: 2px; }
+  .step-body p  { font-size: 11px; color: #555; line-height: 1.5; }
+
+  .pills { display: flex; flex-direction: column; gap: 7px; }
+  .pill-row { display: flex; align-items: center; gap: 10px; }
+  .pill { padding: 3px 12px; border-radius: 20px; font-size: 11px; font-weight: 600; flex-shrink: 0; min-width: 68px; text-align: center; }
+  .pill.green  { background: #eef6f1; color: #2d7a4f; border: 1px solid #b5dbc5; }
+  .pill.yellow { background: #fdf4e7; color: #9a6b1a; border: 1px solid #f0d090; }
+  .pill.red    { background: #fdeaea; color: #b03030; border: 1px solid #f0b0b0; }
+  .pill.blue   { background: #edf1f8; color: #4a6fa5; border: 1px solid #b0c0e0; }
+  .pill-desc   { font-size: 11px; color: #555; }
+
+  .tip { border-radius: 10px; padding: 10px 14px; font-size: 11px; line-height: 1.6; }
+  .tip.yellow { background: #fdf4e7; border: 1px solid #f0d090; color: #854F0B; }
+  .tip.green  { background: #eef6f1; border: 1px solid #b5dbc5; color: #1a3c2e; }
+  .tip.blue   { background: #edf1f8; border: 1px solid #b0c0e0; color: #2a4a80; }
+  .tip.red    { background: #fdeaea; border: 1px solid #f0b0b0; color: #802020; }
+
+  .cards { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .card { background: #f8faf9; border: 1px solid #e0ece5; border-radius: 10px; padding: 12px; }
+  .card .icon { font-size: 18px; margin-bottom: 6px; }
+  .card h4 { font-size: 12px; font-weight: 600; color: #1a3c2e; margin-bottom: 3px; }
+  .card p  { font-size: 10px; color: #555; line-height: 1.5; }
+
+  .mock-form { background: #f8faf9; border-radius: 10px; padding: 14px; border: 1px solid #e0ece5; }
+  .mock-input { background: #fff; border: 0.5px solid #ddd; border-radius: 7px; padding: 7px 10px; font-size: 10px; color: #888; margin-bottom: 6px; width: 100%; }
+  .mock-input.filled { color: #1a1a1a; }
+  .mock-label { font-size: 9px; color: #888; margin-bottom: 3px; text-transform: uppercase; letter-spacing: 0.05em; }
+  .mock-divider { display: flex; align-items: center; gap: 8px; margin: 8px 0; }
+  .mock-divider span { font-size: 9px; color: #aaa; text-transform: uppercase; letter-spacing: 0.06em; white-space: nowrap; }
+  .mock-divider div { flex: 1; height: 0.5px; background: #ddd; }
+  .mock-btn { background: #2d7a4f; color: #fff; border-radius: 7px; padding: 8px; font-size: 11px; font-weight: 600; text-align: center; width: 100%; margin-top: 4px; }
+
+  .phone { width: 130px; height: 240px; background: #111; border-radius: 18px; border: 4px solid #333; overflow: hidden; position: relative; margin: 0 auto; }
+
+  .s-card { background: #fff; border: 0.5px solid #e8e8e4; border-radius: 7px; padding: 8px 10px; display: flex; align-items: center; gap: 8px; margin-bottom: 5px; }
+  .avatar { width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 600; flex-shrink: 0; }
+
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+
+  .page-num { position: absolute; bottom: 10px; right: 14px; font-size: 10px; color: #ccc; }
+
+  @media print {
+    body { background: #fff; }
+    .slide { margin: 0; box-shadow: none; border-radius: 0; page-break-after: always; }
+  }
+
+  @media (max-width: 980px) {
+    body { background: #e8e8e8; }
+
+    .slide {
+      width: 100%;
+      margin: 0 0 16px 0;
+      border-radius: 0;
+      min-height: unset;
+      grid-template-columns: 1fr;
+      box-shadow: none;
+    }
+    .slide.full { grid-template-columns: 1fr; }
+
+    .panel {
+      padding: 28px 20px 24px;
+      gap: 16px;
+    }
+    .panel h2 { font-size: 22px; }
+
+    .phone { display: none; }
+
+    .content {
+      padding: 20px;
+      gap: 16px;
+    }
+
+    .two-col {
+      grid-template-columns: 1fr;
+      gap: 16px;
+    }
+
+    .cards {
+      grid-template-columns: 1fr 1fr;
+    }
+
+    .step-body h4 { font-size: 14px; }
+    .step-body p  { font-size: 12px; }
+    .pill-desc    { font-size: 12px; }
+    .tip          { font-size: 12px; }
+    .section-label { font-size: 12px; }
+
+    .page-num { display: none; }
+
+    /* Cover */
+    .slide.full > div[style*="52px 60px"] {
+      flex-direction: column !important;
+      padding: 32px 20px !important;
+      gap: 24px !important;
+    }
+
+    /* Tips grid */
+    .slide.full div[style*="repeat(3,1fr)"] {
+      grid-template-columns: 1fr 1fr !important;
+    }
+  }
+
+  @media (max-width: 480px) {
+    .cards { grid-template-columns: 1fr; }
+    .slide.full div[style*="repeat(3,1fr)"] {
+      grid-template-columns: 1fr !important;
+    }
+  }
+</style>
+</head>
+<body>
+
+<!-- COVER -->
+<div class="slide full" style="min-height:280px;">
+  <div style="background:#1a3c2e;padding:52px 60px;display:flex;align-items:center;gap:48px;">
+    <div>
+      <div style="font-size:13px;color:#7ec99a;text-transform:uppercase;letter-spacing:0.1em;margin-bottom:8px;">Teacher's Guide</div>
+      <div style="font-size:40px;font-weight:700;color:#fff;margin-bottom:8px;">Caterpillar <span style="color:#7ec99a;">Playtime</span></div>
+      <div style="font-size:15px;color:#9fd4b5;margin-bottom:20px;">Attendance System</div>
+      <div style="display:inline-block;background:#2d7a4f;color:#fff;font-size:12px;padding:6px 16px;border-radius:20px;">6 Tabs Covered · Quick Start</div>
+    </div>
+    <div style="margin-left:auto;text-align:center;">
+      <div style="width:120px;height:120px;background:rgba(255,255,255,0.1);border-radius:24px;display:flex;align-items:center;justify-content:center;font-size:60px;margin:0 auto 10px;">🐛</div>
+      <div style="font-size:11px;color:#9fd4b5;">ai.nimonimo.tech</div>
+    </div>
+  </div>
+  <span class="page-num">1 / 9</span>
+</div>
+
+<!-- SLIDE 1: SCANNER -->
+<div class="slide">
+  <div class="panel">
+    <div class="panel-top">
+      <div class="tab-badge"><div class="tab-num">1</div> Scanner</div>
+      <h2>Scan student QR cards</h2>
+      <p>Point your phone camera at a student's QR card to record their attendance automatically.</p>
+    </div>
+    <div class="phone">
+      <div style="position:absolute;inset:0;background:#1a1a2e;">
+        <div style="padding:8px 8px 5px;background:rgba(0,0,0,0.7);display:flex;justify-content:space-between;align-items:center;">
+          <div style="display:flex;gap:4px;align-items:center;">
+            <div style="width:14px;height:14px;background:#00e676;border-radius:3px;font-size:8px;display:flex;align-items:center;justify-content:center;">🐛</div>
+            <div style="font-size:7px;font-weight:600;color:#fff;">Caterpillar</div>
+          </div>
+          <div style="display:flex;gap:2px;background:rgba(0,0,0,0.5);border-radius:8px;padding:2px 3px;">
+            <div style="font-size:6px;background:#00e676;color:#000;padding:1px 3px;border-radius:6px;font-weight:600;">EN</div>
+            <div style="font-size:6px;color:#555;padding:1px 3px;">BM</div>
+          </div>
+        </div>
+        <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-55%);width:72px;height:72px;">
+          <div style="position:absolute;top:0;left:0;width:12px;height:12px;border-top:2px solid #00e676;border-left:2px solid #00e676;border-radius:2px 0 0 0;"></div>
+          <div style="position:absolute;top:0;right:0;width:12px;height:12px;border-top:2px solid #00e676;border-right:2px solid #00e676;border-radius:0 2px 0 0;"></div>
+          <div style="position:absolute;bottom:0;left:0;width:12px;height:12px;border-bottom:2px solid #00e676;border-left:2px solid #00e676;border-radius:0 0 0 2px;"></div>
+          <div style="position:absolute;bottom:0;right:0;width:12px;height:12px;border-bottom:2px solid #00e676;border-right:2px solid #00e676;border-radius:0 0 2px 0;"></div>
+        </div>
+        <div style="position:absolute;bottom:0;left:0;right:0;background:rgba(0,0,0,0.85);padding:6px 0 8px;display:flex;justify-content:space-around;">
+          <div style="text-align:center;"><div style="font-size:11px;font-weight:600;color:#00e676;">5</div><div style="font-size:5px;color:rgba(0,230,118,0.6);text-transform:uppercase;">Present</div></div>
+          <div style="text-align:center;"><div style="font-size:11px;font-weight:600;color:#ffd600;">2</div><div style="font-size:5px;color:rgba(255,214,0,0.6);text-transform:uppercase;">Late</div></div>
+          <div style="text-align:center;"><div style="font-size:11px;font-weight:600;color:#ff1744;">0</div><div style="font-size:5px;color:rgba(255,23,68,0.6);text-transform:uppercase;">Error</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="content">
+    <div>
+      <div class="section-label">How to use</div>
+      <div class="steps">
+        <div class="step"><div class="step-num">1</div><div class="step-body"><h4>Open Scanner tab</h4><p>Tap the QR icon at the bottom of the screen</p></div></div>
+        <div class="step"><div class="step-num">2</div><div class="step-body"><h4>Point at QR card</h4><p>Hold phone steady — it scans automatically when the QR code is in the frame</p></div></div>
+        <div class="step"><div class="step-num">3</div><div class="step-body"><h4>Check the result</h4><p>Student name and status appear. Scanner resets automatically after 2.5 seconds.</p></div></div>
+      </div>
+    </div>
+    <div>
+      <div class="section-label">Status meanings</div>
+      <div class="pills">
+        <div class="pill-row"><div class="pill green">Present</div><div class="pill-desc">Scanned before 9:00 AM</div></div>
+        <div class="pill-row"><div class="pill yellow">Late</div><div class="pill-desc">Scanned between 9:00 – 10:00 AM</div></div>
+        <div class="pill-row"><div class="pill red">Absent</div><div class="pill-desc">Not scanned — auto-marked at 10:00 AM</div></div>
+        <div class="pill-row"><div class="pill blue">Holiday</div><div class="pill-desc">Student has approved leave for today</div></div>
+      </div>
+    </div>
+    <div class="tip yellow">Scan as early as possible so students are marked Present, not Late. The counter bar at the bottom shows today's running tally.</div>
+  </div>
+  <span class="page-num">2 / 9</span>
+</div>
+
+<!-- SLIDE 2: DASHBOARD -->
+<div class="slide">
+  <div class="panel">
+    <div class="panel-top">
+      <div class="tab-badge"><div class="tab-num">2</div> Dashboard</div>
+      <h2>Today's live overview</h2>
+      <p>See real-time attendance for your branch. Tap any status card to see the student list.</p>
+    </div>
+    <div style="background:#fff;border-radius:10px;overflow:hidden;border:1px solid #e8e8e4;">
+      <div style="background:#fff;padding:8px 10px;border-bottom:0.5px solid #e8e8e4;">
+        <div style="font-size:8px;color:#888;text-transform:uppercase;letter-spacing:0.06em;">Friday, 11 April 2026</div>
+        <div style="font-size:12px;font-weight:600;color:#1a1a1a;">Today's overview</div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:5px;padding:8px;">
+        <div style="background:#fff;border-radius:6px;padding:8px;border:0.5px solid #e8e8e4;"><div style="font-size:18px;font-weight:600;color:#2d7a4f;">5</div><div style="font-size:8px;color:#888;">Present</div></div>
+        <div style="background:#fff;border-radius:6px;padding:8px;border:0.5px solid #e8e8e4;"><div style="font-size:18px;font-weight:600;color:#9a6b1a;">2</div><div style="font-size:8px;color:#888;">Late</div></div>
+        <div style="background:#fff;border-radius:6px;padding:8px;border:0.5px solid #e8e8e4;"><div style="font-size:18px;font-weight:600;color:#b03030;">1</div><div style="font-size:8px;color:#888;">Absent</div></div>
+        <div style="background:#fff;border-radius:6px;padding:8px;border:0.5px solid #e8e8e4;"><div style="font-size:18px;font-weight:600;color:#4a6fa5;">0</div><div style="font-size:8px;color:#888;">Holiday</div></div>
+      </div>
+      <div style="margin:0 8px 8px;background:#f8faf9;border-radius:6px;padding:8px;border:0.5px solid #e0ece5;">
+        <div style="display:flex;justify-content:space-between;"><div style="font-size:10px;font-weight:600;color:#1a3c2e;">Caterpillar Playtime Maxim</div><div style="font-size:10px;font-weight:600;color:#7a4a8a;">88%</div></div>
+        <div style="font-size:8px;color:#888;margin-bottom:4px;">3 students</div>
+        <div style="height:4px;background:#e0e0e0;border-radius:2px;"><div style="width:88%;height:100%;background:#7a4a8a;border-radius:2px;"></div></div>
+      </div>
+    </div>
+  </div>
+  <div class="content">
+    <div>
+      <div class="section-label">What you can do</div>
+      <div class="steps">
+        <div class="step"><div class="step-num" style="background:#4a6fa5;font-size:10px;">👆</div><div class="step-body"><h4>Tap any status card</h4><p>See the full list of students in that category — name, scan time, and absence reason if parent replied</p></div></div>
+        <div class="step"><div class="step-num" style="background:#4a6fa5;font-size:10px;">📋</div><div class="step-body"><h4>View absence reasons</h4><p>Reasons from parents (sick, outstation, family matter etc.) show automatically next to student name</p></div></div>
+        <div class="step"><div class="step-num" style="background:#4a6fa5;font-size:10px;">▶</div><div class="step-body"><h4>Run now (admin only)</h4><p>Manually trigger absent marking — used for Saturday events after scanning is complete</p></div></div>
+      </div>
+    </div>
+    <div class="tip green">Teachers can view attendance only. Only admin can change a student's attendance status.</div>
+  </div>
+  <span class="page-num">3 / 9</span>
+</div>
+
+<!-- SLIDE 3a: STUDENTS LIST -->
+<div class="slide">
+  <div class="panel">
+    <div class="panel-top">
+      <div class="tab-badge"><div class="tab-num">3</div> Students</div>
+      <h2>Student list & actions</h2>
+      <p>View all students in your branch. Use the Actions menu to manage each student.</p>
+    </div>
+    <div>
+      <div class="s-card">
+        <div class="avatar" style="background:#f3e5f5;color:#7b1fa2;">Z</div>
+        <div style="flex:1;"><div style="font-size:10px;font-weight:600;color:#1a1a1a;">Zara Alfiyyah</div><div style="font-size:8px;color:#888;">MXIM-002 · Preschool · 4y 2m</div></div>
+        <div style="font-size:8px;background:#eef6f1;color:#2d7a4f;padding:2px 6px;border-radius:8px;">● TG</div>
+      </div>
+      <div class="s-card">
+        <div class="avatar" style="background:#fce4f3;color:#c2185b;">A</div>
+        <div style="flex:1;"><div style="font-size:10px;font-weight:600;color:#1a1a1a;">Adam Mukhriz</div><div style="font-size:8px;color:#888;">SNTL-002 · Toddler · 2y 1m</div></div>
+        <div style="font-size:8px;background:#fdeaea;color:#b03030;padding:2px 6px;border-radius:8px;">○ TG</div>
+      </div>
+      <div style="background:#f8faf9;border-radius:7px;padding:8px;border:0.5px solid #e0e0e0;margin-top:4px;">
+        <div style="font-size:9px;color:#888;margin-bottom:4px;text-transform:uppercase;letter-spacing:0.05em;">Actions</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;">
+          <div style="background:#fff;border:0.5px solid #e0e0e0;border-radius:5px;padding:5px 7px;font-size:9px;color:#1a1a1a;">📱 Telegram</div>
+          <div style="background:#fff;border:0.5px solid #e0e0e0;border-radius:5px;padding:5px 7px;font-size:9px;color:#1a1a1a;">🔲 View QR</div>
+          <div style="background:#fff;border:0.5px solid #e0e0e0;border-radius:5px;padding:5px 7px;font-size:9px;color:#1a1a1a;">✏️ Edit</div>
+          <div style="background:#fdeaea;border:0.5px solid #f0b0b0;border-radius:5px;padding:5px 7px;font-size:9px;color:#b03030;">🗑️ Delete</div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="content">
+    <div>
+      <div class="section-label">Actions menu — tap on any student card</div>
+      <div class="cards">
+        <div class="card"><div class="icon">📱</div><h4>Telegram link</h4><p>Copy and share the registration link with the parent so they receive absence notifications via Telegram</p></div>
+        <div class="card"><div class="icon">🔲</div><h4>View QR</h4><p>View and download the student's QR card. Print and laminate for daily use at the entrance.</p></div>
+        <div class="card"><div class="icon">✏️</div><h4>Edit student</h4><p>Update student name, class or date of birth</p></div>
+        <div class="card"><div class="icon">🗑️</div><h4>Delete</h4><p>Permanently remove a student from the system</p></div>
+      </div>
+    </div>
+    <div>
+      <div class="section-label">Filter by age group</div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;">
+        <div class="pill" style="background:#fce4f3;color:#880e4f;border:1px solid #f48fb1;">Infant 0–1y</div>
+        <div class="pill" style="background:#f3e5f5;color:#4a148c;border:1px solid #ce93d8;">Toddler 1–3y</div>
+        <div class="pill blue">Playgroup 3–4y</div>
+        <div class="pill green">Preschool 4–6y</div>
+      </div>
+    </div>
+    <div class="tip green">TG badge is green if Telegram is linked, red if not. Share the Telegram link on the student's first day!</div>
+  </div>
+  <span class="page-num">4 / 9</span>
+</div>
+
+<!-- SLIDE 3b: ADD STUDENT -->
+<div class="slide">
+  <div class="panel">
+    <div class="panel-top">
+      <div class="tab-badge"><div class="tab-num">3</div> Students — Add</div>
+      <h2>Adding a new student</h2>
+      <p>Tap + Add at the top right of the Students page to register a new student.</p>
+    </div>
+    <div class="mock-form">
+      <div class="mock-divider"><div></div><span>Student info</span><div></div></div>
+      <div class="mock-input filled">Muhammad Aqil bin Hafiz</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:5px;">
+        <div class="mock-input filled">Caterpillar Playtime Maxim</div>
+        <div class="mock-input" style="background:#f0f0f0;color:#aaa;font-size:9px;">MXIM-007 (Auto)</div>
+      </div>
+      <div class="mock-input">Select class (optional)</div>
+      <div>
+        <div class="mock-label">Date of birth</div>
+        <div class="mock-input filled">15 / 03 / 2023</div>
+        <div style="margin-top:3px;margin-bottom:6px;"><span style="font-size:9px;background:#f3e5f5;color:#7b1fa2;padding:2px 8px;border-radius:10px;">Toddler · 2y 0m</span></div>
+      </div>
+      <div class="mock-divider"><div></div><span>Parent info</span><div></div></div>
+      <div class="mock-input filled">Hafiz bin Ahmad</div>
+      <div class="mock-input filled">0123456789</div>
+      <div class="mock-btn">Save</div>
+    </div>
+  </div>
+  <div class="content">
+    <div>
+      <div class="section-label">Step by step</div>
+      <div class="steps">
+        <div class="step"><div class="step-num">1</div><div class="step-body"><h4>Tap + Add button</h4><p>Top right corner of the Students page</p></div></div>
+        <div class="step"><div class="step-num">2</div><div class="step-body"><h4>Enter student full name</h4><p>As registered officially</p></div></div>
+        <div class="step"><div class="step-num">3</div><div class="step-body"><h4>Select branch</h4><p>Student ID is generated automatically — e.g. MXIM-007. No need to type it.</p></div></div>
+        <div class="step"><div class="step-num">4</div><div class="step-body"><h4>Select class (optional)</h4><p>Only classes for that branch will appear</p></div></div>
+        <div class="step"><div class="step-num">5</div><div class="step-body"><h4>Enter date of birth</h4><p>Age group (Infant / Toddler / Playgroup / Preschool) is calculated and shown automatically</p></div></div>
+        <div class="step"><div class="step-num">6</div><div class="step-body"><h4>Enter parent details</h4><p>Name and phone number. Tap Save. Then share the Telegram registration link with the parent.</p></div></div>
+      </div>
+    </div>
+    <div class="tip yellow">After saving, go to Actions → View QR to download and print the student's QR card for daily scanning.</div>
+  </div>
+  <span class="page-num">5 / 9</span>
+</div>
+
+<!-- SLIDE 4: HOLIDAYS -->
+<div class="slide">
+  <div class="panel">
+    <div class="panel-top">
+      <div class="tab-badge"><div class="tab-num">4</div> Holidays</div>
+      <h2>Time off & school closures</h2>
+      <p>Two tabs — Student Leave (all teachers can add) and School Closures (admin only).</p>
+    </div>
+    <div style="background:#fff;border-radius:10px;overflow:hidden;border:1px solid #e8e8e4;">
+      <div style="display:flex;border-bottom:0.5px solid #e8e8e4;">
+        <div style="flex:1;text-align:center;padding:6px;font-size:9px;color:#2d7a4f;border-bottom:2px solid #2d7a4f;">Student Leave</div>
+        <div style="flex:1;text-align:center;padding:6px;font-size:9px;color:#888;">School Closures</div>
+      </div>
+      <div style="padding:8px;">
+        <div style="background:#f8faf9;border-radius:6px;padding:8px;border:0.5px solid #e0ece5;margin-bottom:5px;">
+          <div style="font-size:9px;color:#888;margin-bottom:3px;">Select student</div>
+          <div style="background:#fff;border:0.5px solid #ddd;border-radius:4px;padding:4px 7px;font-size:9px;color:#1a1a1a;margin-bottom:4px;">Zara Alfiyyah binti Mohd Fairos</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;margin-bottom:4px;">
+            <div><div style="font-size:8px;color:#888;margin-bottom:2px;">Start</div><div style="background:#fff;border:0.5px solid #ddd;border-radius:4px;padding:4px 6px;font-size:9px;color:#4a6fa5;">10 Apr</div></div>
+            <div><div style="font-size:8px;color:#888;margin-bottom:2px;">End</div><div style="background:#fff;border:0.5px solid #ddd;border-radius:4px;padding:4px 6px;font-size:9px;color:#4a6fa5;">12 Apr</div></div>
+          </div>
+          <div style="background:#fff;border:0.5px solid #ddd;border-radius:4px;padding:4px 7px;font-size:9px;color:#888;margin-bottom:5px;">Reason (optional)</div>
+          <div style="background:#2d7a4f;color:#fff;border-radius:4px;padding:4px;font-size:9px;font-weight:600;text-align:center;">Save</div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="content">
+    <div class="two-col">
+      <div>
+        <div class="section-label">Student leave — all teachers</div>
+        <div class="steps">
+          <div class="step"><div class="step-num" style="background:#4a6fa5;">1</div><div class="step-body"><h4>Go to Student Leave tab</h4><p>Make sure you are NOT on School Closures</p></div></div>
+          <div class="step"><div class="step-num" style="background:#4a6fa5;">2</div><div class="step-body"><h4>Tap + Add</h4><p>Select branch first, then choose the student</p></div></div>
+          <div class="step"><div class="step-num" style="background:#4a6fa5;">3</div><div class="step-body"><h4>Set start & end date</h4><p>Can be a single day or multiple days. Add a reason if needed, then tap Save.</p></div></div>
+        </div>
+        <div class="tip green" style="margin-top:10px;">The system marks the student as Holiday automatically for all days in the range. The cron will skip them — no absent alert sent to parents.</div>
+      </div>
+      <div>
+        <div class="section-label">School closures — admin only</div>
+        <div class="steps">
+          <div class="step"><div class="step-num" style="background:#b03030;">1</div><div class="step-body"><h4>Switch to School Closures tab</h4><p>The + Add button is only visible to admin</p></div></div>
+          <div class="step"><div class="step-num" style="background:#b03030;">2</div><div class="step-body"><h4>Enter holiday name</h4><p>e.g. Hari Raya Aidilfitri</p></div></div>
+          <div class="step"><div class="step-num" style="background:#b03030;">3</div><div class="step-body"><h4>Set date range</h4><p>e.g. 30 Apr – 2 May. Shows as one entry automatically.</p></div></div>
+        </div>
+        <div class="tip red" style="margin-top:10px;">On school closure days the system will NOT mark anyone absent or send any notifications. Past closures are deleted automatically.</div>
+      </div>
+    </div>
+  </div>
+  <span class="page-num">6 / 9</span>
+</div>
+
+<!-- SLIDE 5: EVENTS -->
+<div class="slide">
+  <div class="panel">
+    <div class="panel-top">
+      <div class="tab-badge"><div class="tab-num">5</div> Events</div>
+      <h2>Saturday & special events</h2>
+      <p>For events where only specific branches or age groups attend. Admin creates events in advance.</p>
+    </div>
+    <div class="mock-form">
+      <div class="mock-input filled">Sports Day</div>
+      <div>
+        <div class="mock-label">Date</div>
+        <div class="mock-input filled" style="margin-bottom:8px;">19 / 04 / 2026</div>
+      </div>
+      <div>
+        <div class="mock-label">Branches involved</div>
+        <div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:8px;">
+          <div style="background:#2d7a4f;color:#fff;font-size:9px;padding:3px 8px;border-radius:10px;">Maxim ✓</div>
+          <div style="background:#f0f0f0;color:#888;font-size:9px;padding:3px 8px;border-radius:10px;">Sentul</div>
+          <div style="background:#f0f0f0;color:#888;font-size:9px;padding:3px 8px;border-radius:10px;">KLTS</div>
+          <div style="background:#f0f0f0;color:#888;font-size:9px;padding:3px 8px;border-radius:10px;">Wangsa Maju</div>
+        </div>
+      </div>
+      <div>
+        <div class="mock-label">Age groups involved</div>
+        <div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:8px;">
+          <div style="background:#4a6fa5;color:#fff;font-size:9px;padding:3px 8px;border-radius:10px;">Playgroup ✓</div>
+          <div style="background:#2d7a4f;color:#fff;font-size:9px;padding:3px 8px;border-radius:10px;">Preschool ✓</div>
+          <div style="background:#f0f0f0;color:#888;font-size:9px;padding:3px 8px;border-radius:10px;">Toddler</div>
+          <div style="background:#f0f0f0;color:#888;font-size:9px;padding:3px 8px;border-radius:10px;">Infant</div>
+        </div>
+      </div>
+      <div class="mock-btn">Save Event</div>
+    </div>
+  </div>
+  <div class="content">
+    <div class="two-col">
+      <div>
+        <div class="section-label">Creating an event (admin)</div>
+        <div class="steps">
+          <div class="step"><div class="step-num">1</div><div class="step-body"><h4>Tap + Add on Events page</h4><p>Admin only</p></div></div>
+          <div class="step"><div class="step-num">2</div><div class="step-body"><h4>Enter event name & date</h4><p>e.g. Sports Day, 19 April 2026</p></div></div>
+          <div class="step"><div class="step-num">3</div><div class="step-body"><h4>Select branches</h4><p>Tap each branch to toggle on/off. Can be 1 or multiple branches.</p></div></div>
+          <div class="step"><div class="step-num">4</div><div class="step-body"><h4>Select age groups</h4><p>Tap each group to toggle. Only selected groups will be tracked for this event.</p></div></div>
+          <div class="step"><div class="step-num">5</div><div class="step-body"><h4>Tap Save</h4><p>Event shows on the Events page with Today / Upcoming / Past badges</p></div></div>
+        </div>
+      </div>
+      <div>
+        <div class="section-label">On event day</div>
+        <div class="steps">
+          <div class="step"><div class="step-num" style="background:#9a6b1a;">1</div><div class="step-body"><h4>Scan students as normal</h4><p>Use the Scanner tab — only scan students who are attending the event</p></div></div>
+          <div class="step"><div class="step-num" style="background:#9a6b1a;">2</div><div class="step-body"><h4>Admin taps Run now</h4><p>On the Dashboard when all scanning is done. System detects today's event automatically.</p></div></div>
+          <div class="step"><div class="step-num" style="background:#9a6b1a;">3</div><div class="step-body"><h4>Only event students are processed</h4><p>Absent marking and Telegram notifications sent only to event branches and age groups</p></div></div>
+        </div>
+        <div class="tip yellow" style="margin-top:10px;">The cron does not run automatically on weekends. Admin must always tap Run now on Saturday event days.</div>
+      </div>
+    </div>
+  </div>
+  <span class="page-num">7 / 9</span>
+</div>
+
+<!-- SLIDE 6: REPORTS -->
+<div class="slide">
+  <div class="panel">
+    <div class="panel-top">
+      <div class="tab-badge"><div class="tab-num">6</div> Reports</div>
+      <h2>Attendance history & export</h2>
+      <p>Admin only. View past attendance by date range. Export to CSV (Excel) or PDF for printing.</p>
+    </div>
+    <div style="background:#fff;border-radius:10px;overflow:hidden;border:1px solid #e8e8e4;">
+      <div style="padding:8px 10px;border-bottom:0.5px solid #e8e8e4;">
+        <div style="font-size:10px;font-weight:600;color:#1a1a1a;margin-bottom:6px;">Reports</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;margin-bottom:4px;">
+          <div><div style="font-size:8px;color:#888;margin-bottom:2px;">From</div><div style="background:#f8f8f6;border:0.5px solid #ddd;border-radius:4px;padding:4px 6px;font-size:9px;color:#4a6fa5;">03/04/2026</div></div>
+          <div><div style="font-size:8px;color:#888;margin-bottom:2px;">To</div><div style="background:#f8f8f6;border:0.5px solid #ddd;border-radius:4px;padding:4px 6px;font-size:9px;color:#4a6fa5;">11/04/2026</div></div>
+        </div>
+        <div style="background:#f8f8f6;border:0.5px solid #ddd;border-radius:4px;padding:4px 6px;font-size:9px;color:#888;margin-bottom:4px;">All branches</div>
+        <div style="background:#2d7a4f;color:#fff;border-radius:4px;padding:4px;font-size:9px;font-weight:600;text-align:center;">Search</div>
+      </div>
+      <div style="padding:6px 8px;">
+        <div style="background:#f8faf9;border-radius:5px;padding:6px 8px;margin-bottom:5px;border:0.5px solid #e0ece5;">
+          <div style="font-size:9px;font-weight:600;color:#888;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:4px;">Thursday, 10 April · 4 records</div>
+          <div style="display:flex;align-items:center;gap:6px;margin-bottom:3px;">
+            <div style="width:16px;height:16px;background:#eef6f1;border-radius:50%;font-size:8px;display:flex;align-items:center;justify-content:center;color:#2d7a4f;font-weight:600;">Z</div>
+            <div style="font-size:9px;color:#1a1a1a;flex:1;">Zara Alfiyyah</div>
+            <div style="font-size:8px;background:#edf1f8;color:#4a6fa5;padding:1px 5px;border-radius:8px;">HOLIDAY</div>
+          </div>
+          <div style="display:flex;align-items:center;gap:6px;">
+            <div style="width:16px;height:16px;background:#fdeaea;border-radius:50%;font-size:8px;display:flex;align-items:center;justify-content:center;color:#b03030;font-weight:600;">A</div>
+            <div style="font-size:9px;color:#1a1a1a;flex:1;">Adam Mukhriz</div>
+            <div style="font-size:8px;background:#fdeaea;color:#b03030;padding:1px 5px;border-radius:8px;">ABSENT</div>
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;">
+          <div style="background:#f8f8f6;border:0.5px solid #ddd;border-radius:4px;padding:4px;font-size:8px;color:#1a1a1a;text-align:center;">📥 Export CSV</div>
+          <div style="background:#f8f8f6;border:0.5px solid #ddd;border-radius:4px;padding:4px;font-size:8px;color:#1a1a1a;text-align:center;">🖨️ Export PDF</div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="content">
+    <div>
+      <div class="section-label">How to generate a report</div>
+      <div class="steps">
+        <div class="step"><div class="step-num">1</div><div class="step-body"><h4>Open Reports tab</h4><p>Only visible to admin — teachers do not see this tab</p></div></div>
+        <div class="step"><div class="step-num">2</div><div class="step-body"><h4>Set date range</h4><p>Choose From and To dates — e.g. first and last day of the month</p></div></div>
+        <div class="step"><div class="step-num">3</div><div class="step-body"><h4>Filter by branch (optional)</h4><p>Leave as All Branches or select one specific branch</p></div></div>
+        <div class="step"><div class="step-num">4</div><div class="step-body"><h4>Tap Search</h4><p>Records appear grouped by date — student name, status, scan time and absence reason</p></div></div>
+        <div class="step"><div class="step-num">5</div><div class="step-body"><h4>Export</h4><p>Tap Export CSV to open in Excel / Google Sheets, or Export PDF to print directly</p></div></div>
+      </div>
+    </div>
+    <div class="two-col">
+      <div>
+        <div class="section-label">What the export includes</div>
+        <div class="pills">
+          <div class="pill-row"><div style="width:5px;height:5px;background:#2d7a4f;border-radius:50%;flex-shrink:0;margin-top:2px;"></div><div class="pill-desc">Date, student name, student ID</div></div>
+          <div class="pill-row"><div style="width:5px;height:5px;background:#2d7a4f;border-radius:50%;flex-shrink:0;margin-top:2px;"></div><div class="pill-desc">Branch and class</div></div>
+          <div class="pill-row"><div style="width:5px;height:5px;background:#2d7a4f;border-radius:50%;flex-shrink:0;margin-top:2px;"></div><div class="pill-desc">Attendance status and scan time</div></div>
+          <div class="pill-row"><div style="width:5px;height:5px;background:#2d7a4f;border-radius:50%;flex-shrink:0;margin-top:2px;"></div><div class="pill-desc">Absence reason (if parent replied)</div></div>
+        </div>
+      </div>
+      <div class="tip blue">Reports are only accessible to the admin account. This tab is completely hidden from teacher logins.</div>
+    </div>
+  </div>
+  <span class="page-num">8 / 9</span>
+</div>
+
+<!-- SLIDE 7: QUICK TIPS -->
+<div class="slide full">
+  <div style="background:#1a3c2e;padding:48px 60px;">
+    <div style="font-size:13px;color:#7ec99a;text-transform:uppercase;letter-spacing:0.1em;margin-bottom:8px;">Summary</div>
+    <div style="font-size:32px;font-weight:700;color:#fff;margin-bottom:36px;">Things to remember</div>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:20px;">
+      <div style="background:rgba(255,255,255,0.07);border-radius:12px;padding:20px;border:1px solid rgba(255,255,255,0.1);">
+        <div style="font-size:22px;margin-bottom:10px;">⏰</div>
+        <div style="font-size:13px;font-weight:600;color:#7ec99a;margin-bottom:6px;">Scan early</div>
+        <div style="font-size:11px;color:#9fd4b5;line-height:1.5;">Scan before 9AM so students are marked Present, not Late.</div>
+      </div>
+      <div style="background:rgba(255,255,255,0.07);border-radius:12px;padding:20px;border:1px solid rgba(255,255,255,0.1);">
+        <div style="font-size:22px;margin-bottom:10px;">📅</div>
+        <div style="font-size:13px;font-weight:600;color:#7ec99a;margin-bottom:6px;">Add leave early</div>
+        <div style="font-size:11px;color:#9fd4b5;line-height:1.5;">Add student leave before the date to prevent false absent alerts to parents.</div>
+      </div>
+      <div style="background:rgba(255,255,255,0.07);border-radius:12px;padding:20px;border:1px solid rgba(255,255,255,0.1);">
+        <div style="font-size:22px;margin-bottom:10px;">🔗</div>
+        <div style="font-size:13px;font-weight:600;color:#7ec99a;margin-bottom:6px;">Link parents early</div>
+        <div style="font-size:11px;color:#9fd4b5;line-height:1.5;">Share Telegram registration link on day one so notifications work from the start.</div>
+      </div>
+      <div style="background:rgba(255,255,255,0.07);border-radius:12px;padding:20px;border:1px solid rgba(255,255,255,0.1);">
+        <div style="font-size:22px;margin-bottom:10px;">🔒</div>
+        <div style="font-size:13px;font-weight:600;color:#7ec99a;margin-bottom:6px;">Keep login safe</div>
+        <div style="font-size:11px;color:#9fd4b5;line-height:1.5;">Do not share your branch login. Each session logs your name for audit.</div>
+      </div>
+      <div style="background:rgba(255,255,255,0.07);border-radius:12px;padding:20px;border:1px solid rgba(255,255,255,0.1);">
+        <div style="font-size:22px;margin-bottom:10px;">🌙</div>
+        <div style="font-size:13px;font-weight:600;color:#7ec99a;margin-bottom:6px;">Log in daily</div>
+        <div style="font-size:11px;color:#9fd4b5;line-height:1.5;">Session expires at midnight. Log in fresh each morning before scanning.</div>
+      </div>
+      <div style="background:rgba(255,255,255,0.07);border-radius:12px;padding:20px;border:1px solid rgba(255,255,255,0.1);">
+        <div style="font-size:22px;margin-bottom:10px;">📞</div>
+        <div style="font-size:13px;font-weight:600;color:#7ec99a;margin-bottom:6px;">Need help?</div>
+        <div style="font-size:11px;color:#9fd4b5;line-height:1.5;">Contact your branch admin if you notice any issues with records or notifications.</div>
+      </div>
+    </div>
+  </div>
+  <span class="page-num" style="color:rgba(255,255,255,0.3);">9 / 9</span>
+</div>
+
+</body>
+</html>

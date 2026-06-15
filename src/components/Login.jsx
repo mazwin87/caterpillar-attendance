@@ -69,7 +69,7 @@ export default function Login({ onLogin }) {
 
         {/* Logo */}
         <div style={{ textAlign: 'center', marginBottom: 36 }}>
-          <img src="/logo.png" alt="Caterpillar Playtime" style={{ width: 100, height: 100, objectFit: 'contain', margin: '0 auto 16px', display: 'block' }} />          <div style={{ fontSize: 22, fontWeight: 500, color: 'var(--text)' }}>Caterpillar Playtime</div>
+          <img src={`${import.meta.env.BASE_URL}logo.png`} alt="Caterpillar Playtime" style={{ width: 100, height: 100, objectFit: 'contain', margin: '0 auto 16px', display: 'block' }} />          <div style={{ fontSize: 22, fontWeight: 500, color: 'var(--text)' }}>Caterpillar Playtime</div>
           <div style={{ fontSize: 13, color: 'var(--muted)', marginTop: 4 }}>Attendance System</div>
         </div>
 

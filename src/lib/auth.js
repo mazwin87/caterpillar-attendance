@@ -29,3 +29,11 @@ export function setSession(user, teacherName = '') {
 export function clearSession() {
   localStorage.removeItem(SESSION_KEY)
 }
+
+export function updateSession(updates) {
+  try {
+    const raw = localStorage.getItem(SESSION_KEY)
+    if (!raw) return
+    localStorage.setItem(SESSION_KEY, JSON.stringify({ ...JSON.parse(raw), ...updates }))
+  } catch {}
+}

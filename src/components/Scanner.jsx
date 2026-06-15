@@ -280,7 +280,7 @@ export default function Scanner({ lang, setLang, t, session }) {
           borderBottom: mode === 'manual' ? '0.5px solid var(--border)' : 'none',
         }}>
         <div className="flex items-center gap-3">
-          <img src="/logo.png" alt="logo" style={{ width: 34, height: 34, objectFit: 'contain' }} />
+          <img src={`${import.meta.env.BASE_URL}logo.png`} alt="logo" style={{ width: 34, height: 34, objectFit: 'contain' }} />
           <div>
             <div style={{ fontWeight: 500, fontSize: 13, color: mode === 'camera' ? '#fff' : 'var(--text)' }}>Caterpillar Playtime</div>
             <div style={{ fontSize: 9, color: mode === 'camera' ? '#666' : 'var(--muted)', letterSpacing: '0.1em' }}>ATTENDANCE</div>

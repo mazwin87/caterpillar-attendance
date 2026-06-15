@@ -130,7 +130,7 @@ export default function Students({ t, session }) {
   async function handleDelete(studentId) {
     if (!window.confirm('Delete this student?')) return
     setOpenMenu(null)
-    const { error } = await supabase.from('students').delete().eq('id', studentId)
+    const { error } = await supabase.from('students').update({ is_active: false }).eq('id', studentId)
     if (error) { alert(error.message); return }
     setStudents(prev => prev.filter(s => s.id !== studentId))
   }
