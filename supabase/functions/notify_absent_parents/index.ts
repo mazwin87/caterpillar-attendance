@@ -20,7 +20,11 @@ async function sendMessage(chatId: number, text: string, keyboard?: any) {
 
 Deno.serve(async () => {
   const supabase = createClient(SUPABASE_URL, SUPABASE_KEY)
-  const today = new Date().toISOString().split('T')[0]
+
+  // Derive today's date in Malaysia time (UTC+8) so the query date matches
+  // what the frontend wrote when recording attendance.
+  const myt = new Date(Date.now() + 8 * 60 * 60 * 1000)
+  const today = myt.toISOString().split('T')[0]
 
   const { data: absentees, error } = await supabase
     .from('attendance')

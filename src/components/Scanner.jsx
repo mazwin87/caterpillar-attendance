@@ -9,6 +9,16 @@ const STATUS_CONFIG = {
   DUP:     { bg: '#2979ff22', icon: '🔁', badge: 'bg-[#2979ff]/20 text-[#2979ff]' },
 }
 
+// Malaysia is UTC+8 — always derive today's date in local time, not UTC,
+// so that 9 AM MYT doesn't silently resolve to the previous UTC day.
+function getLocalDateString() {
+  const now = new Date()
+  const year  = now.getFullYear()
+  const month = String(now.getMonth() + 1).padStart(2, '0')
+  const day   = String(now.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
+}
+
 export default function Scanner({ lang, setLang, t, session }) {
   const [result, setResult]                   = useState(null)
   const [showCard, setShowCard]               = useState(false)
@@ -22,6 +32,7 @@ export default function Scanner({ lang, setLang, t, session }) {
   const [branches, setBranches]         = useState([])
   const [runningNow, setRunningNow]     = useState(false)
   const [runResult, setRunResult] = useState(null)
+  const [cameraError, setCameraError]   = useState(null)
 
   const processingRef = useRef(false)
   const lastScanned   = useRef(null)
@@ -36,7 +47,7 @@ export default function Scanner({ lang, setLang, t, session }) {
   // Load today's counts + attendance map
   useEffect(() => {
     async function loadTodayCounts() {
-      const today = new Date().toISOString().split('T')[0]
+      const today = getLocalDateString()
       const { data } = await supabase
         .from('attendance')
         .select('status, student_id, students!inner(branch_id)')
@@ -67,24 +78,58 @@ export default function Scanner({ lang, setLang, t, session }) {
 
   // Camera scanner
   useEffect(() => {
+    // Guard: getUserMedia requires a secure context (HTTPS or localhost)
+    if (!navigator.mediaDevices?.getUserMedia) {
+      setCameraError('Camera not available. Please use HTTPS or a supported browser.')
+      return
+    }
+
     const html5Qrcode = new Html5Qrcode('qr-reader-hidden')
     scannerRef.current = html5Qrcode
-    html5Qrcode.start(
-      { facingMode: 'environment' },
-      { fps: 10, qrbox: 250 },
-      async (decodedText) => {
-        if (handleScanRef.current) await handleScanRef.current(decodedText)
-      },
-      () => {}
-    ).then(() => {
-      if (document.getElementById('camera-container')?.querySelector('video')) return
-      const hiddenVideo = document.querySelector('#qr-reader-hidden video')
-      const container   = document.getElementById('camera-container')
-      if (hiddenVideo && container) {
-        hiddenVideo.style.cssText = `position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; object-fit: cover; display: block; z-index: 1;`
-        container.appendChild(hiddenVideo)
+
+    const startCamera = async () => {
+      // Try rear camera first; fall back to any available camera
+      const facingModes = ['environment', 'user']
+      for (const facingMode of facingModes) {
+        try {
+          await html5Qrcode.start(
+            { facingMode },
+            { fps: 10, qrbox: 250 },
+            async (decodedText) => {
+              if (handleScanRef.current) await handleScanRef.current(decodedText)
+            },
+            () => {}
+          )
+          // Move the internally-created video into the visible container
+          // Use a small delay to ensure the video element is rendered by the library
+          setTimeout(() => {
+            const container = document.getElementById('camera-container')
+            if (!container || container.querySelector('video')) return
+            const hiddenVideo = document.querySelector('#qr-reader-hidden video')
+            if (hiddenVideo) {
+              hiddenVideo.style.cssText = 'position:fixed;top:0;left:0;width:100vw;height:100vh;object-fit:cover;display:block;z-index:1;'
+              container.appendChild(hiddenVideo)
+            }
+          }, 300)
+          setCameraError(null)
+          return // success — stop trying
+        } catch (err) {
+          if (facingMode === 'user') {
+            // Both modes failed — surface the error to the user
+            const msg = err?.name === 'NotAllowedError'
+              ? 'Camera permission denied. Please allow camera access in your browser settings.'
+              : err?.name === 'NotFoundError'
+              ? 'No camera found on this device.'
+              : `Camera error: ${err?.message || 'Unknown error'}`
+            setCameraError(msg)
+            console.error('Camera start error:', err)
+          }
+        }
       }
-    }).catch(err => console.error('Camera start error:', err))
+    }
+
+    startCamera()
+
     return () => {
       if (scannerRef.current?.isScanning) scannerRef.current.stop().catch(() => {})
     }
@@ -152,17 +197,40 @@ export default function Scanner({ lang, setLang, t, session }) {
     }
   }
 
+  // Shared helper — upsert attendance and confirm the DB write before updating UI.
+  // Uses maybeSingle() (not single()) so that "no existing row" is not treated as an error.
+  async function upsertAttendance(student, status) {
+    const today = getLocalDateString()
+
+    const { data: existing, error: selectError } = await supabase
+      .from('attendance')
+      .select('id')
+      .eq('student_id', student.id)
+      .eq('date', today)
+      .maybeSingle()
+
+    if (selectError) throw new Error(`Lookup failed: ${selectError.message}`)
+
+    if (existing) {
+      const { error } = await supabase
+        .from('attendance')
+        .update({ status })
+        .eq('id', existing.id)
+      if (error) throw new Error(`Update failed: ${error.message}`)
+    } else {
+      const { error } = await supabase
+        .from('attendance')
+        .insert({ student_id: student.id, date: today, status, scanned_at: new Date().toISOString() })
+      if (error) throw new Error(`Insert failed: ${error.message}`)
+    }
+  }
+
   async function markAttendance(student) {
     if (marking) return
     setMarking(student.id)
     try {
-      const today    = new Date().toISOString().split('T')[0]
-      const existing = await supabase.from('attendance').select('id').eq('student_id', student.id).eq('date', today).single()
-      if (existing.data) {
-        await supabase.from('attendance').update({ status: 'PRESENT' }).eq('id', existing.data.id)
-      } else {
-        await supabase.from('attendance').insert({ student_id: student.id, date: today, status: 'PRESENT', scanned_at: new Date().toISOString() })
-      }
+      await upsertAttendance(student, 'PRESENT')
+      // Only update UI after DB write is confirmed
       const prev = todayAttendance[student.id]
       setTodayAttendance(p => ({ ...p, [student.id]: 'PRESENT' }))
       setCounts(c => ({
@@ -172,6 +240,7 @@ export default function Scanner({ lang, setLang, t, session }) {
       }))
     } catch (err) {
       console.error('Mark present error:', err.message)
+      alert(`Could not save attendance: ${err.message}`)
     } finally {
       setMarking(null)
     }
@@ -181,13 +250,7 @@ export default function Scanner({ lang, setLang, t, session }) {
     if (marking) return
     setMarking(student.id + '_late')
     try {
-      const today    = new Date().toISOString().split('T')[0]
-      const existing = await supabase.from('attendance').select('id').eq('student_id', student.id).eq('date', today).single()
-      if (existing.data) {
-        await supabase.from('attendance').update({ status: 'LATE' }).eq('id', existing.data.id)
-      } else {
-        await supabase.from('attendance').insert({ student_id: student.id, date: today, status: 'LATE', scanned_at: new Date().toISOString() })
-      }
+      await upsertAttendance(student, 'LATE')
       const prev = todayAttendance[student.id]
       setTodayAttendance(p => ({ ...p, [student.id]: 'LATE' }))
       setCounts(c => ({
@@ -197,6 +260,7 @@ export default function Scanner({ lang, setLang, t, session }) {
       }))
     } catch (err) {
       console.error('Mark late error:', err.message)
+      alert(`Could not save attendance: ${err.message}`)
     } finally {
       setMarking(null)
     }
@@ -206,17 +270,7 @@ export default function Scanner({ lang, setLang, t, session }) {
     if (marking) return
     setMarking(student.id + '_absent')
     try {
-      const today    = new Date().toISOString().split('T')[0]
-      const existing = await supabase.from('attendance').select('id').eq('student_id', student.id).eq('date', today).single()
-
-      if (existing.data) {
-        await supabase.from('attendance').update({ status: 'ABSENT' }).eq('id', existing.data.id)
-      } else {
-        await supabase.from('attendance').insert({
-          student_id: student.id, date: today, status: 'ABSENT', scanned_at: new Date().toISOString()
-        })
-      }
-
+      await upsertAttendance(student, 'ABSENT')
       const prev = todayAttendance[student.id]
       setTodayAttendance(p => ({ ...p, [student.id]: 'ABSENT' }))
       setCounts(c => ({
@@ -226,6 +280,7 @@ export default function Scanner({ lang, setLang, t, session }) {
       }))
     } catch (err) {
       console.error('Mark absent error:', err.message)
+      alert(`Could not save attendance: ${err.message}`)
     } finally {
       setMarking(null)
     }
@@ -313,6 +368,20 @@ export default function Scanner({ lang, setLang, t, session }) {
       {/* ── CAMERA MODE UI ── */}
       {mode === 'camera' && (
         <>
+          {/* Camera error overlay */}
+          {cameraError && (
+            <div className="fixed inset-0 flex items-center justify-center px-8" style={{ zIndex: 25, background: 'rgba(0,0,0,0.85)' }}>
+              <div style={{ background: '#1a1a1a', border: '0.5px solid #ff1744', borderRadius: 16, padding: 24, textAlign: 'center', maxWidth: 320 }}>
+                <div style={{ fontSize: 32, marginBottom: 12 }}>📷</div>
+                <div style={{ fontSize: 14, fontWeight: 500, color: '#ff1744', marginBottom: 8 }}>Camera unavailable</div>
+                <div style={{ fontSize: 12, color: '#888', lineHeight: 1.6 }}>{cameraError}</div>
+                <button onClick={() => setMode('manual')}
+                  style={{ marginTop: 16, background: '#4caf87', color: '#fff', border: 'none', borderRadius: 10, padding: '10px 24px', fontSize: 13, fontWeight: 500, cursor: 'pointer' }}>
+                  Switch to Manual
+                </button>
+              </div>
+            </div>
+          )}
           <div className="fixed inset-0 pointer-events-none" style={{ zIndex: 10 }}>
             {[
               'top-[calc(50%-110px)] left-[calc(50%-110px)] border-t-[3px] border-l-[3px] rounded-tl-lg',
