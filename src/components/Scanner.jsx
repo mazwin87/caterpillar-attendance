@@ -187,12 +187,13 @@ export default function Scanner({ lang, setLang, t, session }) {
     setRunningNow(true)
     setRunResult(null)
     try {
+      await supabase.rpc('run_daily_absent_marking')
       await supabase.functions.invoke('notify_absent_parents')
     } catch (err) {
       console.warn(err)
     } finally {
       setRunningNow(false)
-      setRunResult('✅ Notifications sent!')
+      setRunResult('✅ Absent marked & notifications sent!')
       setTimeout(() => setRunResult(null), 3000)
     }
   }
