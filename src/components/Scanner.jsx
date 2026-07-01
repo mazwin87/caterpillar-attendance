@@ -221,7 +221,7 @@ export default function Scanner({ lang, setLang, t, session }) {
     } else {
       const { error } = await supabase
         .from('attendance')
-        .insert({ student_id: student.id, date: today, status, scanned_at: new Date().toISOString() })
+        .insert({ student_id: student.id, branch_id: student.branch_id, date: today, status, scanned_at: new Date().toISOString() })
       if (error) throw new Error(`Insert failed: ${error.message}`)
     }
   }
