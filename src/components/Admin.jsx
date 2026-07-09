@@ -48,30 +48,27 @@ export default function Admin({ session }) {
   ]
 
   return (
-    <div style={{ minHeight: '100%', background: 'var(--bg)', paddingBottom: 'var(--navbar-height)' }}>
-      <div style={{ background: 'var(--surface)', borderBottom: '0.5px solid var(--border)', padding: '52px 20px 20px' }}>
-        <div style={{ fontSize: 11, color: 'var(--muted)', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 4 }}>Admin Panel</div>
-        <div style={{ fontSize: 22, fontWeight: 500, color: 'var(--text)' }}>Tools & Reports</div>
+    <div className="min-h-full bg-page" style={{ paddingBottom: 'var(--navbar-height)' }}>
+      <div className="pt-[52px] lg:pt-8 bg-surface border-b border-border pb-5 px-5">
+       <div className="lg:max-w-5xl lg:mx-auto">
+        <div className="text-[11px] text-muted tracking-[0.08em] uppercase mb-1">Admin Panel</div>
+        <div className="text-[22px] font-medium text-ink">Tools & Reports</div>
+       </div>
       </div>
-      <div style={{ padding: '20px 16px', display: 'flex', flexDirection: 'column', gap: 12 }}>
+      <div className="lg:max-w-5xl lg:mx-auto grid grid-cols-1 lg:grid-cols-2 gap-3 p-4 py-5">
         {tools.map(tool => {
           const Icon = tool.icon
           return (
             <button key={tool.to} onClick={() => navigate(tool.to)}
-              style={{
-                background: 'var(--surface)', border: '0.5px solid var(--border)',
-                borderRadius: 14, padding: '20px', textAlign: 'left',
-                cursor: 'pointer', width: '100%', display: 'flex', alignItems: 'center', gap: 16,
-                transition: 'all 0.15s',
-              }}>
-              <div style={{ width: 52, height: 52, borderRadius: 14, background: tool.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+              className="bg-surface border border-border rounded-2xl p-5 text-left cursor-pointer w-full flex items-center gap-4 transition-all duration-150">
+              <div className="w-[52px] h-[52px] rounded-2xl flex items-center justify-center flex-shrink-0" style={{ background: tool.bg }}>
                 <Icon size={26} color={tool.color} />
               </div>
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontSize: 16, fontWeight: 500, color: 'var(--text)', marginBottom: 4 }}>{tool.title}</div>
-                <div style={{ fontSize: 12, color: 'var(--muted)', lineHeight: 1.5 }}>{tool.desc}</div>
+              <div className="flex-1 min-w-0">
+                <div className="text-base font-medium text-ink mb-1">{tool.title}</div>
+                <div className="text-xs text-muted leading-relaxed">{tool.desc}</div>
               </div>
-              <div style={{ fontSize: 18, color: 'var(--muted)', flexShrink: 0 }}>›</div>
+              <div className="text-lg text-muted flex-shrink-0">›</div>
             </button>
           )
         })}

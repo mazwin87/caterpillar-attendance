@@ -1,40 +1,42 @@
 import { useEffect, useState } from 'react'
 import QRCode from 'qrcode'
-import { getStudents, getBranches, addStudent, supabase } from '../lib/supabase'
+import { addStudent, supabase } from '../lib/supabase'
+import { useBranches } from '../hooks/useBranches'
+import { useStudents } from '../hooks/useStudents'
+import { CenteredSpinner } from './ui/Spinner'
+import StudentFilters from './students/StudentFilters'
+import StudentCard from './students/StudentCard'
+import AddStudentModal from './students/AddStudentModal'
+import EditStudentModal from './students/EditStudentModal'
+import QRModal from './students/QRModal'
+import PrintQRModal from './students/PrintQRModal'
 
-const AGE_GROUPS = [
-  '3-6months', '7-12months', '1year', '2year', '3year', '4year', '5year', '6year'
-]
-
-const AGE_GROUP_LABELS = {
-  '3-6months':  '3–6 Months',
-  '7-12months': '7–12 Months',
-  '1year': '1 Year',
-  '2year': '2 Years',
-  '3year': '3 Years',
-  '4year': '4 Years',
-  '5year': '5 Years',
-  '6year': '6 Years',
+const EMPTY_FORM = {
+  name: '', student_no: '', branch_id: '', age_group: '',
+  parent_name: '', parent_phone: '', parent_email: '', date_of_birth: '', monthly_fee: ''
 }
 
 export default function Students({ t, session }) {
-  const [students, setStudents]         = useState([])
-  const [branches, setBranches]         = useState([])
+  const teacherBranchId = session?.role === 'teacher' ? session?.branch_id : null
+  const { branches: allBranches } = useBranches()
+  const { students, setStudents, loading: studentsLoading } = useStudents(teacherBranchId)
+
+  const branches = session?.role === 'teacher'
+    ? allBranches.filter(br => br.id === session?.branch_id)
+    : allBranches
+
   const [loading, setLoading]           = useState(true)
   const [showForm, setShowForm]         = useState(false)
   const [showEditForm, setShowEditForm] = useState(false)
   const [editStudent, setEditStudent]   = useState(null)
   const [search, setSearch]             = useState('')
-  const [filterBranch, setFilter]       = useState('')
+  const [filterBranch, setFilterBranch]       = useState('')
   const [filterGroup, setFilterGroup]   = useState([])
   const [openMenu, setOpenMenu]         = useState(null)
   const [qrModal, setQrModal]           = useState(null)
   const [qrDataUrl, setQrDataUrl]       = useState('')
   const [saving, setSaving]             = useState(false)
-  const [form, setForm] = useState({
-    name: '', student_no: '', branch_id: '', age_group: '',
-    parent_name: '', parent_phone: '', parent_email: '', date_of_birth: '', monthly_fee: ''
-  })
+  const [form, setForm]                 = useState(EMPTY_FORM)
   const [editForm, setEditForm] = useState({
     name: '', age_group: '', date_of_birth: '', monthly_fee: ''
   })
@@ -48,19 +50,8 @@ export default function Students({ t, session }) {
 
   useEffect(() => {
     const today = new Date().toISOString().split('T')[0]
-    Promise.all([
-      getStudents(session?.role === 'teacher' ? session?.branch_id : null),
-      getBranches(),
-      supabase.from('attendance').select('student_id, status').eq('date', today),
-    ])
-      .then(([s, b, { data: a }]) => {
-        setStudents(s)
-        setTodayAttendance(a || [])
-        setBranches(session?.role === 'teacher'
-          ? b.filter(br => br.id === session?.branch_id)
-          : b
-        )
-      })
+    supabase.from('attendance').select('student_id, status').eq('date', today)
+      .then(({ data }) => setTodayAttendance(data || []))
       .finally(() => setLoading(false))
   }, [])
 
@@ -174,7 +165,7 @@ export default function Students({ t, session }) {
       }
       setStudents(prev => [student, ...prev])
       setShowForm(false)
-      setForm({ name: '', student_no: '', branch_id: '', age_group: '', parent_name: '', parent_phone: '', parent_email: '', date_of_birth: '', monthly_fee: '' })
+      setForm(EMPTY_FORM)
     } catch (err) { alert(err.message) }
     finally { setSaving(false) }
   }
@@ -246,421 +237,90 @@ export default function Students({ t, session }) {
     return matchSearch && matchBranch && matchGroup && matchTelegram && matchAttendance
   })
 
-  const inp = {
-    style: {
-      width: '100%', background: 'var(--bg)', border: '0.5px solid var(--border)',
-      borderRadius: 10, padding: '11px 14px', fontSize: 14, color: 'var(--text)', outline: 'none'
-    }
-  }
-
-  const divider = (label) => (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 10, margin: '6px 0 2px' }}>
-      <div style={{ flex: 1, height: '0.5px', background: 'var(--border)' }} />
-      <div style={{ fontSize: 10, color: 'var(--muted)', letterSpacing: '0.08em', textTransform: 'uppercase' }}>{label}</div>
-      <div style={{ flex: 1, height: '0.5px', background: 'var(--border)' }} />
-    </div>
-  )
-
-  const AGE_OPTIONS = [
-    { value: '3-6months',  label: '3 – 6 Months' },
-    { value: '7-12months', label: '7 – 12 Months' },
-    { value: '1year',      label: '1 Year' },
-    { value: '2year',      label: '2 Years' },
-    { value: '3year',      label: '3 Years' },
-    { value: '4year',      label: '4 Years' },
-    { value: '5year',      label: '5 Years' },
-    { value: '6year',      label: '6 Years' },
-  ]
-
   return (
-    <div style={{ minHeight: '100%', background: 'var(--bg)', paddingBottom: 100 }}
+    <div className="min-h-full bg-page pb-[100px]"
       onClick={() => setOpenMenu(null)}>
 
-      {/* Header */}
-      <div style={{ background: 'var(--surface)', borderBottom: '0.5px solid var(--border)', padding: '52px 20px 16px' }}>
-
-        {/* Title + buttons */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
-          <div>
-            <div style={{ fontSize: 22, fontWeight: 500, color: 'var(--text)' }}>Students</div>
-            <div style={{ fontSize: 12, color: 'var(--muted)', marginTop: 2 }}>{filtered.length} of {students.length} students</div>
-          </div>
-          <div style={{ display: 'flex', gap: 8 }}>
-            <button onClick={() => setShowPrintModal(true)}
-              style={{ background: 'var(--bg)', border: '0.5px solid var(--border)', borderRadius: 20, padding: '8px 14px', fontSize: 13, color: 'var(--muted)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}>
-              🖨️ Print QR
-            </button>
-            <button onClick={e => { e.stopPropagation(); setShowForm(true) }}
-              style={{ background: 'var(--present)', color: '#fff', border: 'none', borderRadius: 20, padding: '8px 16px', fontSize: 13, fontWeight: 500, cursor: 'pointer' }}>
-              + Add
-            </button>
-          </div>
-        </div>
-
-        {/* Search + branch */}
-        <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
-          <input value={search} onChange={e => setSearch(e.target.value)}
-            placeholder="Search name or ID..."
-            style={{ ...inp.style, flex: 1 }} />
-          <select value={filterBranch} onChange={e => setFilter(e.target.value)}
-            style={{ background: 'var(--bg)', border: '0.5px solid var(--border)', borderRadius: 10, padding: '11px 12px', fontSize: 13, color: 'var(--text)', outline: 'none', flexShrink: 0 }}>
-            <option value="">All branches</option>
-            {branches.map(b => <option key={b.id} value={b.id}>{b.slug}</option>)}
-          </select>
-        </div>
-
-        {/* Filter card */}
-        <div style={{ background: 'var(--bg)', borderRadius: 12, border: '0.5px solid var(--border)', overflow: 'hidden' }}>
-
-          {/* Age group */}
-          <div style={{ padding: '10px 14px', borderBottom: '0.5px solid var(--border)' }}>
-            <div style={{ fontSize: 11, color: 'var(--muted)', marginBottom: 8 }}>Age group</div>
-            <div style={{ display: 'flex', gap: 5, overflowX: 'auto', paddingBottom: 2 }}>
-              {['', ...AGE_GROUPS].map(g => {
-                const isActive = g === '' ? filterGroup.length === 0 : filterGroup.includes(g)
-                return (
-                  <button key={g}
-                    onClick={() => {
-                      if (g === '') setFilterGroup([])
-                      else setFilterGroup(prev => prev.includes(g) ? prev.filter(x => x !== g) : [...prev, g])
-                    }}
-                    style={{
-                      background: isActive ? '#4caf87' : 'var(--surface)',
-                      color:      isActive ? '#fff' : 'var(--muted)',
-                      border:     `0.5px solid ${isActive ? '#4caf87' : 'var(--border)'}`,
-                      borderRadius: 20, padding: '4px 12px', fontSize: 11, cursor: 'pointer',
-                      whiteSpace: 'nowrap', flexShrink: 0,
-                    }}>
-                    {g ? AGE_GROUP_LABELS[g] : 'All'}
-                  </button>
-                )
-              })}
-            </div>
-          </div>
-
-          {/* Telegram + Attendance */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', borderBottom: '0.5px solid var(--border)' }}>
-            <div style={{ padding: '10px 14px', borderRight: '0.5px solid var(--border)' }}>
-              <div style={{ fontSize: 11, color: 'var(--muted)', marginBottom: 8 }}>Telegram link</div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                {[
-                  { val: '',          label: 'All' },
-                  { val: 'linked',    label: '● Linked' },
-                  { val: 'notlinked', label: '○ Unlinked' },
-                ].map(opt => (
-                  <button key={opt.val} onClick={() => setFilterTelegram(opt.val)}
-                    style={{
-                      background: filterTelegram === opt.val ? '#4caf87' : 'var(--surface)',
-                      color:      filterTelegram === opt.val ? '#fff' : 'var(--muted)',
-                      border:     `0.5px solid ${filterTelegram === opt.val ? '#4caf87' : 'var(--border)'}`,
-                      borderRadius: 8, padding: '5px 8px', fontSize: 11, cursor: 'pointer', textAlign: 'left',
-                    }}>
-                    {opt.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div style={{ padding: '10px 14px' }}>
-              <div style={{ fontSize: 11, color: 'var(--muted)', marginBottom: 8 }}>Attendance</div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                {[
-                  { val: '',        label: 'All',       color: null },
-                  { val: 'PRESENT', label: '✓ Present', color: '#4caf87' },
-                  { val: 'LATE',    label: '⏰ Late',   color: '#f0a500' },
-                  { val: 'ABSENT',  label: '✗ Absent',  color: 'var(--absent)' },
-                  { val: 'HOLIDAY', label: '🏖 Holiday', color: 'var(--holiday)' },
-                ].map(opt => (
-                  <button key={opt.val} onClick={() => setFilterAttendance(opt.val)}
-                    style={{
-                      background: filterAttendance === opt.val ? (opt.color || '#4caf87') : 'var(--surface)',
-                      color:      filterAttendance === opt.val ? '#fff' : 'var(--muted)',
-                      border:     `0.5px solid ${filterAttendance === opt.val ? (opt.color || '#4caf87') : 'var(--border)'}`,
-                      borderRadius: 8, padding: '5px 8px', fontSize: 11, cursor: 'pointer', textAlign: 'left',
-                    }}>
-                    {opt.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-          </div>
-
-          {/* Active filters + clear */}
-          {(filterGroup.length > 0 || filterTelegram || filterAttendance || filterBranch) && (
-            <div style={{ padding: '8px 14px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: '#edf7f2' }}>
-              <div style={{ fontSize: 11, color: '#4caf87', display: 'flex', gap: 4, flexWrap: 'wrap' }}>
-                {[
-                  filterBranch && branches.find(b => b.id === filterBranch)?.slug,
-                  ...filterGroup.map(g => AGE_GROUP_LABELS[g]),
-                  filterTelegram === 'linked'    && 'Linked',
-                  filterTelegram === 'notlinked' && 'Unlinked',
-                  filterAttendance && filterAttendance.charAt(0) + filterAttendance.slice(1).toLowerCase(),
-                ].filter(Boolean).map((f, i) => (
-                  <span key={i} style={{ background: '#4caf87', color: '#fff', borderRadius: 10, padding: '1px 8px', fontSize: 10 }}>
-                    {f}
-                  </span>
-                ))}
-              </div>
-              <button onClick={() => { setFilter(''); setFilterGroup([]); setFilterTelegram(''); setFilterAttendance('') }}
-                style={{ fontSize: 11, color: '#4caf87', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 500, whiteSpace: 'nowrap' }}>
-                Clear all ×
-              </button>
-            </div>
-          )}
-        </div>
-      </div>
+      <StudentFilters
+        filteredCount={filtered.length}
+        totalCount={students.length}
+        onOpenAdd={() => setShowForm(true)}
+        onOpenPrint={() => setShowPrintModal(true)}
+        search={search}
+        onSearchChange={setSearch}
+        branches={branches}
+        filterBranch={filterBranch}
+        onFilterBranchChange={setFilterBranch}
+        filterGroup={filterGroup}
+        onFilterGroupChange={setFilterGroup}
+        filterTelegram={filterTelegram}
+        onFilterTelegramChange={setFilterTelegram}
+        filterAttendance={filterAttendance}
+        onFilterAttendanceChange={setFilterAttendance}
+        onClearFilters={() => { setFilterBranch(''); setFilterGroup([]); setFilterTelegram(''); setFilterAttendance('') }}
+      />
 
       {/* Student list */}
-      <div style={{ padding: '12px 16px', display: 'flex', flexDirection: 'column', gap: 8 }}>
-        {loading ? (
-          <div style={{ textAlign: 'center', padding: 48 }}>
-            <div style={{ width: 24, height: 24, border: '2px solid var(--border)', borderTopColor: 'var(--present)', borderRadius: '50%', animation: 'spin 0.8s linear infinite', margin: '0 auto' }} />
-          </div>
+      <div className="lg:max-w-5xl lg:mx-auto p-4">
+       {(loading || studentsLoading) ? (
+          <CenteredSpinner padding={48} />
         ) : filtered.length === 0 ? (
-          <div style={{ textAlign: 'center', color: 'var(--muted)', fontSize: 13, padding: 48 }}>No students found</div>
-        ) : filtered.map(s => {
-          const ageLabel = AGE_GROUP_LABELS[s.age_group] || s.age_group
-          const tgLinked = s.parents?.telegram_chat_id
-          const isOpen   = openMenu === s.id
-          return (
-            <div key={s.id}
-              style={{ background: 'var(--surface)', border: '0.5px solid var(--border)', borderRadius: 12, padding: '12px 14px' }}
-              onClick={e => e.stopPropagation()}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                <div style={{ width: 38, height: 38, borderRadius: '50%', background: 'var(--present-bg)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, fontWeight: 500, color: 'var(--present)', flexShrink: 0 }}>
-                  {s.name.charAt(0)}
-                </div>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: 14, fontWeight: 500, color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{s.name}</div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 3, flexWrap: 'wrap' }}>
-                    <span style={{ fontSize: 10, padding: '2px 7px', borderRadius: 20, flexShrink: 0, background: tgLinked ? 'var(--present-bg)' : 'var(--absent-bg)', color: tgLinked ? 'var(--present)' : 'var(--absent)' }}>
-                      {tgLinked ? '● Linked' : '○ Unlinked'}
-                    </span>
-                    <span style={{ fontSize: 11, color: 'var(--muted)' }}>
-                      {s.student_no} · {s.branches?.name?.replace('Caterpillar Playtime ', '')}
-                    </span>
-                    {ageLabel && (
-                      <span style={{ fontSize: 10, padding: '1px 7px', borderRadius: 20, background: 'var(--holiday-bg)', color: 'var(--holiday)', fontWeight: 500, flexShrink: 0 }}>
-                        {ageLabel}
-                      </span>
-                    )}
-                  </div>
-                </div>
-                <button onClick={e => { e.stopPropagation(); setOpenMenu(isOpen ? null : s.id) }}
-                  style={{ padding: '6px 12px', borderRadius: 8, fontSize: 12, cursor: 'pointer', flexShrink: 0, whiteSpace: 'nowrap', background: isOpen ? 'var(--border)' : 'var(--bg)', border: '0.5px solid var(--border)', color: isOpen ? 'var(--text)' : 'var(--muted)' }}>
-                  Actions
-                </button>
-              </div>
-
-              {isOpen && (
-                <div style={{ marginTop: 10, borderTop: '0.5px solid var(--border)', paddingTop: 10 }}>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
-                    <button onClick={() => copyTelegramLink(s.id)}
-                      style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '9px 12px', borderRadius: 8, border: '0.5px solid var(--border)', background: 'var(--bg)', cursor: 'pointer', fontSize: 13, color: 'var(--text)' }}>
-                      <span style={{ fontSize: 16 }}>📱</span> Telegram
-                    </button>
-                    <button onClick={() => openQR(s)}
-                      style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '9px 12px', borderRadius: 8, border: '0.5px solid var(--border)', background: 'var(--bg)', cursor: 'pointer', fontSize: 13, color: 'var(--text)' }}>
-                      <span style={{ fontSize: 16 }}>🔲</span> View QR
-                    </button>
-                    <button onClick={() => openEdit(s)}
-                      style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '9px 12px', borderRadius: 8, border: '0.5px solid var(--border)', background: 'var(--bg)', cursor: 'pointer', fontSize: 13, color: 'var(--text)' }}>
-                      <span style={{ fontSize: 16 }}>✏️</span> Edit
-                    </button>
-                    <button onClick={() => handleDelete(s.id)}
-                      style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '9px 12px', borderRadius: 8, border: '0.5px solid var(--absent)', background: 'var(--absent-bg)', cursor: 'pointer', fontSize: 13, color: 'var(--absent)' }}>
-                      <span style={{ fontSize: 16 }}>🗑️</span> Delete
-                    </button>
-                  </div>
-                </div>
-              )}
-            </div>
-          )
-        })}
+          <div className="text-center text-muted text-[13px] p-12">No students found</div>
+        ) : (
+        <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-3">
+          {filtered.map(s => (
+            <StudentCard
+              key={s.id}
+              student={s}
+              isOpen={openMenu === s.id}
+              onToggleMenu={id => setOpenMenu(openMenu === id ? null : id)}
+              onCopyTelegram={copyTelegramLink}
+              onOpenQR={openQR}
+              onOpenEdit={openEdit}
+              onDelete={handleDelete}
+            />
+          ))}
+        </div>
+        )}
       </div>
 
-      {/* Add student modal */}
-      {showForm && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', zIndex: 50, display: 'flex', alignItems: 'flex-end' }}
-          onClick={() => setShowForm(false)}>
-          <div style={{ width: '100%', background: 'var(--surface)', borderRadius: '20px 20px 0 0', padding: 24, paddingBottom: 80, maxHeight: '90vh', overflowY: 'auto' }}
-            onClick={e => e.stopPropagation()}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
-              <div style={{ fontSize: 18, fontWeight: 500, color: 'var(--text)' }}>Add student</div>
-              <button onClick={() => { setShowForm(false); setErrors({}) }} style={{ background: 'none', border: 'none', fontSize: 22, color: 'var(--muted)', cursor: 'pointer', lineHeight: 1 }}>×</button>
-            </div>
-            <form onSubmit={handleAdd} style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-              {divider('Student info')}
-              <input value={form.name} onChange={e => { setForm(f => ({ ...f, name: e.target.value })); setErrors(f => ({ ...f, name: '' })) }} placeholder="Full name" {...inp} />
-              {errors.name && <div style={{ fontSize: 11, color: 'var(--absent)', marginTop: -6 }}>⚠️ Student name is required</div>}
+      <AddStudentModal
+        open={showForm}
+        onClose={() => { setShowForm(false); setErrors({}) }}
+        form={form}
+        setForm={setForm}
+        errors={errors}
+        setErrors={setErrors}
+        branches={branches}
+        onGenerateStudentNo={generateStudentNo}
+        onSubmit={handleAdd}
+        saving={saving}
+      />
 
-              <select value={form.branch_id}
-                onChange={async e => {
-                  const branchId = e.target.value
-                  const studentNo = await generateStudentNo(branchId)
-                  setForm(f => ({ ...f, branch_id: branchId, student_no: studentNo, age_group: '' }))
-                  setErrors(f => ({ ...f, branch_id: '' }))
-                }} {...inp}>
-                <option value="">Select branch</option>
-                {branches.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
-              </select>
-              {errors.branch_id && <div style={{ fontSize: 11, color: 'var(--absent)', marginTop: -6 }}>⚠️ Please select a branch</div>}
+      <EditStudentModal
+        open={showEditForm && !!editStudent}
+        onClose={() => setShowEditForm(false)}
+        editForm={editForm}
+        setEditForm={setEditForm}
+        onSubmit={handleEdit}
+        saving={saving}
+      />
 
-              <div style={{ position: 'relative' }}>
-                <input value={form.student_no} readOnly placeholder="Student ID — select branch first"
-                  style={{ ...inp.style, color: 'var(--muted)', background: 'var(--border)', paddingRight: 70 }} />
-                {form.student_no && (
-                  <span style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', fontSize: 10, color: 'var(--present)', background: 'var(--present-bg)', padding: '2px 8px', borderRadius: 10 }}>Auto</span>
-                )}
-              </div>
+      <QRModal
+        student={qrModal}
+        qrDataUrl={qrDataUrl}
+        onClose={() => { setQrModal(null); setQrDataUrl('') }}
+      />
 
-              <select value={form.age_group} onChange={e => { setForm(f => ({ ...f, age_group: e.target.value })); setErrors(f => ({ ...f, age_group: '' })) }} {...inp}>
-                <option value="">Select age group</option>
-                {AGE_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
-              </select>
-              {errors.age_group && <div style={{ fontSize: 11, color: 'var(--absent)', marginTop: -6 }}>⚠️ Please select an age group</div>}
-
-              <div>
-                <div style={{ fontSize: 11, color: 'var(--muted)', marginBottom: 4 }}>Date of birth</div>
-                <input type="date" value={form.date_of_birth} max={new Date().toISOString().split('T')[0]}
-                  onChange={e => { setForm(f => ({ ...f, date_of_birth: e.target.value })); setErrors(f => ({ ...f, date_of_birth: '' })) }} {...inp} />
-                {errors.date_of_birth && <div style={{ fontSize: 11, color: 'var(--absent)', marginTop: 4 }}>⚠️ Please enter date of birth</div>}
-              </div>
-
-              <div>
-                <div style={{ fontSize: 11, color: 'var(--muted)', marginBottom: 4 }}>Monthly fee (RM)</div>
-                <input type="number" step="0.01" value={form.monthly_fee || ''}
-                  onChange={e => { setForm(f => ({ ...f, monthly_fee: e.target.value })); setErrors(f => ({ ...f, monthly_fee: '' })) }}
-                  placeholder="0.00" {...inp} />
-                {errors.monthly_fee && <div style={{ fontSize: 11, color: 'var(--absent)', marginTop: 4 }}>⚠️ Please enter monthly fee</div>}
-              </div>
-
-              {divider('Parent info')}
-              <input value={form.parent_name}
-                onChange={e => { setForm(f => ({ ...f, parent_name: e.target.value })); setErrors(f => ({ ...f, parent_name: '' })) }}
-                placeholder="Parent / guardian name" {...inp} />
-              {errors.parent_name && <div style={{ fontSize: 11, color: 'var(--absent)', marginTop: -6 }}>⚠️ Parent name is required</div>}
-
-              <input value={form.parent_phone} type="tel"
-                onChange={e => { setForm(f => ({ ...f, parent_phone: e.target.value })); setErrors(f => ({ ...f, parent_phone: '' })) }}
-                placeholder="Phone number e.g. 012-345 6789" {...inp} />
-              {errors.parent_phone && <div style={{ fontSize: 11, color: 'var(--absent)', marginTop: -6 }}>⚠️ Phone number is required</div>}
-
-              <input value={form.parent_email} type="email"
-                onChange={e => { setForm(f => ({ ...f, parent_email: e.target.value })); setErrors(f => ({ ...f, parent_email: '' })) }}
-                placeholder="Email (optional)" {...inp} />
-
-              <div style={{ display: 'flex', gap: 10, marginTop: 8 }}>
-                <button type="button" onClick={() => { setShowForm(false); setErrors({}) }}
-                  style={{ flex: 1, background: 'var(--bg)', border: '0.5px solid var(--border)', borderRadius: 10, padding: 12, fontSize: 14, color: 'var(--muted)', cursor: 'pointer' }}>Cancel</button>
-                <button type="submit" disabled={saving}
-                  style={{ flex: 1, background: 'var(--present)', border: 'none', borderRadius: 10, padding: 12, fontSize: 14, color: '#fff', fontWeight: 500, cursor: 'pointer', opacity: saving ? 0.6 : 1 }}>
-                  {saving ? 'Saving...' : 'Save'}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* Edit student modal */}
-      {showEditForm && editStudent && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', zIndex: 50, display: 'flex', alignItems: 'flex-end' }}
-          onClick={() => setShowEditForm(false)}>
-          <div style={{ width: '100%', background: 'var(--surface)', borderRadius: '20px 20px 0 0', padding: 24, paddingBottom: 80, maxHeight: '85vh', overflowY: 'auto' }}
-            onClick={e => e.stopPropagation()}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
-              <div style={{ fontSize: 18, fontWeight: 500, color: 'var(--text)' }}>Edit student</div>
-              <button onClick={() => setShowEditForm(false)} style={{ background: 'none', border: 'none', fontSize: 22, color: 'var(--muted)', cursor: 'pointer', lineHeight: 1 }}>×</button>
-            </div>
-            <form onSubmit={handleEdit} style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-              <input required value={editForm.name} onChange={e => setEditForm(f => ({ ...f, name: e.target.value }))} placeholder="Full name" {...inp} />
-              <select value={editForm.age_group} onChange={e => setEditForm(f => ({ ...f, age_group: e.target.value }))} {...inp}>
-                <option value="">Select age group</option>
-                {AGE_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
-              </select>
-              <div>
-                <div style={{ fontSize: 11, color: 'var(--muted)', marginBottom: 4 }}>Date of birth</div>
-                <input type="date" value={editForm.date_of_birth} max={new Date().toISOString().split('T')[0]}
-                  onChange={e => setEditForm(f => ({ ...f, date_of_birth: e.target.value }))} {...inp} />
-              </div>
-              <div style={{ background: 'var(--holiday-bg)', border: '0.5px solid var(--holiday)', borderRadius: 10, padding: '10px 14px', fontSize: 12, color: 'var(--holiday)' }}>
-                Student ID and branch cannot be changed after registration.
-              </div>
-              <div>
-                <div style={{ fontSize: 11, color: 'var(--muted)', marginBottom: 4 }}>Monthly fee (RM)</div>
-                <input type="number" step="0.01" value={editForm.monthly_fee || ''}
-                  onChange={e => setEditForm(f => ({ ...f, monthly_fee: e.target.value }))}
-                  placeholder="0.00" {...inp} />
-              </div>
-              <div style={{ display: 'flex', gap: 10, marginTop: 8 }}>
-                <button type="button" onClick={() => setShowEditForm(false)}
-                  style={{ flex: 1, background: 'var(--bg)', border: '0.5px solid var(--border)', borderRadius: 10, padding: 12, fontSize: 14, color: 'var(--muted)', cursor: 'pointer' }}>Cancel</button>
-                <button type="submit" disabled={saving}
-                  style={{ flex: 1, background: 'var(--present)', border: 'none', borderRadius: 10, padding: 12, fontSize: 14, color: '#fff', fontWeight: 500, cursor: 'pointer', opacity: saving ? 0.6 : 1 }}>
-                  {saving ? 'Saving...' : 'Save'}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* QR modal */}
-      {qrModal && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', zIndex: 50, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}
-          onClick={() => setQrModal(null)}>
-          <div style={{ background: 'var(--surface)', borderRadius: 16, padding: 24, width: '100%', maxWidth: 300, textAlign: 'center' }}
-            onClick={e => e.stopPropagation()}>
-            <div style={{ fontSize: 16, fontWeight: 500, color: 'var(--text)', marginBottom: 2 }}>{qrModal.name}</div>
-            <div style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 20 }}>{qrModal.student_no}</div>
-            {qrDataUrl && <img src={qrDataUrl} alt="QR" style={{ width: 200, height: 200, borderRadius: 8, border: '0.5px solid var(--border)', marginBottom: 20 }} />}
-            <div style={{ display: 'flex', gap: 10 }}>
-              <button onClick={() => { setQrModal(null); setQrDataUrl('') }}
-                style={{ flex: 1, background: 'var(--bg)', border: '0.5px solid var(--border)', borderRadius: 10, padding: 11, fontSize: 14, color: 'var(--muted)', cursor: 'pointer' }}>Close</button>
-              <a href={qrDataUrl} download={`${qrModal.student_no}-qr.png`}
-                style={{ flex: 1, background: 'var(--present)', borderRadius: 10, padding: 11, fontSize: 14, color: '#fff', fontWeight: 500, textAlign: 'center', textDecoration: 'none', display: 'block' }}>
-                Download
-              </a>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Print QR modal */}
-      {showPrintModal && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', zIndex: 50, display: 'flex', alignItems: 'flex-end' }}
-          onClick={() => setShowPrintModal(false)}>
-          <div style={{ width: '100%', background: 'var(--surface)', borderRadius: '20px 20px 0 0', paddingTop: 24, paddingLeft: 24, paddingRight: 24, paddingBottom: 100 }}
-            onClick={e => e.stopPropagation()}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
-              <div style={{ fontSize: 18, fontWeight: 500, color: 'var(--text)' }}>Print QR codes</div>
-              <button onClick={() => setShowPrintModal(false)} style={{ background: 'none', border: 'none', fontSize: 22, color: 'var(--muted)', cursor: 'pointer', lineHeight: 1 }}>×</button>
-            </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-              <select value={printBranch} onChange={e => setPrintBranch(e.target.value)} {...inp}>
-                <option value="">Select branch</option>
-                {branches.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
-              </select>
-              <div style={{ background: 'var(--holiday-bg)', border: '0.5px solid var(--holiday)', borderRadius: 10, padding: '10px 14px', fontSize: 12, color: 'var(--holiday)', lineHeight: 1.6 }}>
-                9 QR codes per page (3×3), A4 size. Ready to cut and laminate.
-              </div>
-              <div style={{ display: 'flex', gap: 10 }}>
-                <button onClick={() => setShowPrintModal(false)}
-                  style={{ flex: 1, background: 'var(--bg)', border: '0.5px solid var(--border)', borderRadius: 10, padding: 12, fontSize: 14, color: 'var(--muted)', cursor: 'pointer' }}>
-                  Cancel
-                </button>
-                <button onClick={handleBatchPrint} disabled={printingQR || !printBranch}
-                  style={{ flex: 1, background: 'var(--present)', border: 'none', borderRadius: 10, padding: 12, fontSize: 14, color: '#fff', fontWeight: 500, cursor: 'pointer', opacity: (printingQR || !printBranch) ? 0.6 : 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
-                  🖨️ {printingQR ? 'Generating...' : 'Print'}
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+      <PrintQRModal
+        open={showPrintModal}
+        onClose={() => setShowPrintModal(false)}
+        branches={branches}
+        printBranch={printBranch}
+        setPrintBranch={setPrintBranch}
+        onPrint={handleBatchPrint}
+        printing={printingQR}
+      />
     </div>
   )
 }

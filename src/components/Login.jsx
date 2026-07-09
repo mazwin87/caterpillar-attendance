@@ -2,6 +2,8 @@ import { useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { setSession } from '../lib/auth'
 
+const inputClass = "w-full bg-page border border-border rounded-[10px] px-4 py-3.5 text-[15px] text-ink outline-none"
+
 export default function Login({ onLogin }) {
   const [username, setUsername]       = useState('')
   const [password, setPassword]       = useState('')
@@ -50,32 +52,18 @@ export default function Login({ onLogin }) {
     setIsTeacher(data?.role === 'teacher')
   }
 
-  const inp = {
-    style: {
-      width: '100%',
-      background: 'var(--bg)',
-      border: '0.5px solid var(--border)',
-      borderRadius: 10,
-      padding: '13px 16px',
-      fontSize: 15,
-      color: 'var(--text)',
-      outline: 'none',
-    }
-  }
-
   return (
-    <div style={{ minHeight: '100vh', background: 'var(--bg)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
-      <div style={{ width: '100%', maxWidth: 360 }}>
+    <div className="min-h-screen bg-page flex items-center justify-center p-6">
+      <div className="w-full max-w-[360px]">
 
-        {/* Logo */}
-        <div style={{ textAlign: 'center', marginBottom: 36 }}>
-          <img src={`${import.meta.env.BASE_URL}logo.png`} alt="Caterpillar Playtime" style={{ width: 100, height: 100, objectFit: 'contain', margin: '0 auto 16px', display: 'block' }} />          <div style={{ fontSize: 22, fontWeight: 500, color: 'var(--text)' }}>Caterpillar Playtime</div>
-          <div style={{ fontSize: 13, color: 'var(--muted)', marginTop: 4 }}>Attendance System</div>
+        <div className="text-center mb-9">
+          <img src={`${import.meta.env.BASE_URL}logo.png`} alt="Caterpillar Playtime" className="w-[100px] h-[100px] object-contain mx-auto mb-4 block" />
+          <div className="text-[22px] font-medium text-ink">Caterpillar Playtime</div>
+          <div className="text-[13px] text-muted mt-1">Attendance System</div>
         </div>
 
-        {/* Form */}
-        <div style={{ background: 'var(--surface)', border: '0.5px solid var(--border)', borderRadius: 16, padding: 24 }}>
-          <form onSubmit={handleLogin} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+        <div className="bg-surface border border-border rounded-2xl p-6">
+          <form onSubmit={handleLogin} className="flex flex-col gap-3">
 
             <input
               required
@@ -84,7 +72,7 @@ export default function Login({ onLogin }) {
               placeholder="Username"
               autoCapitalize="none"
               autoCorrect="off"
-              {...inp}
+              className={inputClass}
             />
 
             <input
@@ -93,24 +81,23 @@ export default function Login({ onLogin }) {
               value={password}
               onChange={e => setPassword(e.target.value)}
               placeholder="Password"
-              {...inp}
+              className={inputClass}
             />
 
-            {/* Teacher name — only shows for teacher accounts */}
             {isTeacher && (
-              <div style={{ animation: 'slideDown 0.2s ease' }}>
+              <div className="animate-[slideDown_0.2s_ease]">
                 <input
                   required
                   value={teacherName}
                   onChange={e => setTeacherName(e.target.value)}
                   placeholder="Your name e.g. Cikgu Siti"
-                  {...inp}
+                  className={inputClass}
                 />
               </div>
             )}
 
             {error && (
-              <div style={{ background: 'var(--absent-bg)', border: '0.5px solid var(--absent)', borderRadius: 8, padding: '10px 14px', fontSize: 13, color: 'var(--absent)' }}>
+              <div className="bg-absent-bg border border-absent rounded-lg px-3.5 py-2.5 text-[13px] text-absent">
                 {error}
               </div>
             )}
@@ -118,19 +105,19 @@ export default function Login({ onLogin }) {
             <button
               type="submit"
               disabled={loading}
-              style={{ background: 'var(--present)', color: '#fff', border: 'none', borderRadius: 10, padding: 14, fontSize: 15, fontWeight: 500, cursor: 'pointer', marginTop: 4, opacity: loading ? 0.7 : 1 }}>
+              className="bg-primary text-white border-0 rounded-[10px] py-3.5 text-[15px] font-medium cursor-pointer mt-1 disabled:opacity-70">
               {loading ? 'Signing in...' : 'Sign in'}
             </button>
           </form>
         </div>
 
-        <div style={{ textAlign: 'center', marginTop: 16, fontSize: 12, color: 'var(--muted)' }}>
+        <div className="text-center mt-4 text-xs text-muted">
           Session expires at midnight
         </div>
 
-      <div style={{ textAlign: 'center', marginTop: 12 }}>
+        <div className="text-center mt-3">
           <a href="/guide.html" target="_blank"
-            style={{ fontSize: 12, color: '#2d7a4f', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+            className="text-xs text-primary no-underline inline-flex items-center gap-1">
             📖 View Teacher Guide
           </a>
         </div>

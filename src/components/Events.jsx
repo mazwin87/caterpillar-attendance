@@ -1,17 +1,26 @@
 import { useEffect, useState } from 'react'
 import { getBranches, supabase } from '../lib/supabase'
+import { AGE_GROUPS, AGE_GROUP_LABELS } from '../lib/constants'
+import { cleanBranchName } from '../lib/branch'
+import { CenteredSpinner } from './ui/Spinner'
+import Modal from './ui/Modal'
 
-const AGE_GROUPS = ['3-6months', '7-12months', '1year', '2year', '3year', '4year', '5year', '6year']
+const inputClass = "w-full bg-page border border-border rounded-[10px] px-3.5 py-2.5 text-sm text-ink outline-none"
 
-const AGE_GROUP_LABELS = {
-  '3-6months':  '3–6 Months',
-  '7-12months': '7–12 Months',
-  '1year': '1 Year',
-  '2year': '2 Years',
-  '3year': '3 Years',
-  '4year': '4 Years',
-  '5year': '5 Years',
-  '6year': '6 Years',
+const PILL_BASE = "px-3.5 py-1.5 rounded-full text-xs cursor-pointer transition-all duration-150 border"
+const PILL_VARIANTS = {
+  present: {
+    selected:   `${PILL_BASE} bg-present text-white border-present font-medium`,
+    unselected: `${PILL_BASE} bg-page text-muted border-border font-normal`,
+  },
+  holiday: {
+    selected:   `${PILL_BASE} bg-holiday text-white border-holiday font-medium`,
+    unselected: `${PILL_BASE} bg-page text-muted border-border font-normal`,
+  },
+}
+
+function pillButton(selected, color) {
+  return PILL_VARIANTS[color][selected ? 'selected' : 'unselected']
 }
 
 export default function Events({ t }) {
@@ -76,84 +85,69 @@ export default function Events({ t }) {
   const isUpcoming = e => e.date > today
   const isPast     = e => e.date < today
 
-  const inp = {
-    style: {
-      width: '100%', background: 'var(--bg)', border: '0.5px solid var(--border)',
-      borderRadius: 10, padding: '11px 14px', fontSize: 14, color: 'var(--text)', outline: 'none'
-    }
-  }
-
-  const branchName = (id) => branches.find(b => b.id === id)?.name?.replace('Caterpillar Playtime ', '') || id  
+  const branchName = (id) => cleanBranchName(branches.find(b => b.id === id)?.name) || id
 
   return (
-    <div style={{ minHeight: '100%', background: 'var(--bg)', paddingBottom: 80 }}>
+    <div className="min-h-full bg-page pb-20">
 
       {/* Header */}
-      <div style={{ background: 'var(--surface)', borderBottom: '0.5px solid var(--border)', padding: '52px 20px 16px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <div style={{ fontSize: 22, fontWeight: 500, color: 'var(--text)' }}>Events</div>
+      <div className="pt-[52px] lg:pt-8 bg-surface border-b border-border pb-4 px-5">
+       <div className="lg:max-w-5xl lg:mx-auto flex items-center justify-between">
+          <div className="text-[22px] font-medium text-ink">Events</div>
           <button onClick={() => setShowForm(true)}
-            style={{ background: 'var(--present)', color: '#fff', border: 'none', borderRadius: 20, padding: '8px 16px', fontSize: 13, fontWeight: 500, cursor: 'pointer' }}>
+            className="bg-present text-white border-0 rounded-full px-4 py-2 text-[13px] font-medium cursor-pointer">
             + Add
           </button>
-        </div>
+       </div>
       </div>
 
       {/* Event list */}
-     <div style={{ padding: '12px 16px', display: 'flex', flexDirection: 'column', gap: 8 }}
+     <div className="lg:max-w-5xl lg:mx-auto p-4"
         onClick={() => setOpenEventMenu(null)}>
         {loading ? (
-          <div style={{ textAlign: 'center', padding: 48 }}>
-            <div style={{ width: 24, height: 24, border: '2px solid var(--border)', borderTopColor: 'var(--present)', borderRadius: '50%', animation: 'spin 0.8s linear infinite', margin: '0 auto' }} />
-          </div>
+          <CenteredSpinner padding={48} />
         ) : events.length === 0 ? (
-          <div style={{ textAlign: 'center', color: 'var(--muted)', fontSize: 13, padding: 48 }}>No events yet</div>
-        ) : events.map(ev => {
+          <div className="text-center text-muted text-[13px] p-12">No events yet</div>
+        ) : (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-2">
+        {events.map(ev => {
             const isOpen = openEventMenu === ev.id
             return (
                 <div key={ev.id}
-                style={{
-                    background: 'var(--surface)',
-                    border: `0.5px solid ${isToday(ev) ? 'var(--present)' : 'var(--border)'}`,
-                    borderRadius: 12, padding: '14px 16px',
-                }}
+                className={`bg-surface border rounded-xl p-4 ${isToday(ev) ? 'border-present' : 'border-border'}`}
                 onClick={e => e.stopPropagation()}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}>
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-                        <div style={{ fontSize: 15, fontWeight: 500, color: 'var(--text)' }}>{ev.name}</div>
+                <div className="flex justify-between items-start mb-2">
+                    <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                        <div className="text-[15px] font-medium text-ink">{ev.name}</div>
                         {isToday(ev) && (
-                        <span style={{ fontSize: 10, padding: '2px 8px', borderRadius: 20, background: 'var(--present-bg)', color: 'var(--present)', fontWeight: 500 }}>Today</span>
+                        <span className="text-[10px] px-2 py-0.5 rounded-full bg-present-bg text-present font-medium">Today</span>
                         )}
                         {isUpcoming(ev) && (
-                        <span style={{ fontSize: 10, padding: '2px 8px', borderRadius: 20, background: 'var(--holiday-bg)', color: 'var(--holiday)', fontWeight: 500 }}>Upcoming</span>
+                        <span className="text-[10px] px-2 py-0.5 rounded-full bg-holiday-bg text-holiday font-medium">Upcoming</span>
                         )}
                         {isPast(ev) && (
-                        <span style={{ fontSize: 10, padding: '2px 8px', borderRadius: 20, background: 'var(--bg)', color: 'var(--muted)' }}>Past</span>
+                        <span className="text-[10px] px-2 py-0.5 rounded-full bg-page text-muted">Past</span>
                         )}
                     </div>
-                    <div style={{ fontSize: 12, color: 'var(--muted)', marginTop: 3 }}>
+                    <div className="text-xs text-muted mt-1">
                         {new Date(ev.date).toLocaleDateString('en-MY', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
                     </div>
                     </div>
                     <button onClick={e => { e.stopPropagation(); setOpenEventMenu(isOpen ? null : ev.id) }}
-                    style={{
-                        padding: '6px 12px', borderRadius: 8, fontSize: 12, cursor: 'pointer',
-                        flexShrink: 0, whiteSpace: 'nowrap', marginLeft: 8, transition: 'all 0.15s',
-                        background: isOpen ? 'var(--border)' : 'var(--bg)',
-                        border: '0.5px solid var(--border)',
-                        color: isOpen ? 'var(--text)' : 'var(--muted)',
-                    }}>
+                    className={`px-3 py-1.5 rounded-lg text-xs cursor-pointer flex-shrink-0 whitespace-nowrap ml-2 transition-all duration-150 border border-border ${
+                      isOpen ? 'bg-border text-ink' : 'bg-page text-muted'
+                    }`}>
                     Actions
                     </button>
                 </div>
 
                 {/* Branches */}
-                <div style={{ marginBottom: 6 }}>
-                    <div style={{ fontSize: 10, color: 'var(--muted)', marginBottom: 4, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Branches</div>
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
+                <div className="mb-1.5">
+                    <div className="text-[10px] text-muted mb-1 uppercase tracking-wider">Branches</div>
+                    <div className="flex flex-wrap gap-1">
                     {ev.branches.map(id => (
-                        <span key={id} style={{ fontSize: 11, padding: '2px 8px', borderRadius: 20, background: 'var(--present-bg)', color: 'var(--present)' }}>
+                        <span key={id} className="text-[11px] px-2 py-0.5 rounded-full bg-present-bg text-present">
                         {branchName(id)}
                         </span>
                     ))}
@@ -162,10 +156,10 @@ export default function Events({ t }) {
 
                 {/* Age groups */}
                 <div>
-                    <div style={{ fontSize: 10, color: 'var(--muted)', marginBottom: 4, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Age groups</div>
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
+                    <div className="text-[10px] text-muted mb-1 uppercase tracking-wider">Age groups</div>
+                    <div className="flex flex-wrap gap-1">
                     {ev.age_groups.map(g => (
-                      <span key={g} style={{ fontSize: 11, padding: '2px 8px', borderRadius: 20, background: 'var(--holiday-bg)', color: 'var(--holiday)' }}>
+                      <span key={g} className="text-[11px] px-2 py-0.5 rounded-full bg-holiday-bg text-holiday">
                         {AGE_GROUP_LABELS[g] || g}
                       </span>
                     ))}
@@ -174,57 +168,45 @@ export default function Events({ t }) {
 
                 {/* Action sheet */}
                 {isOpen && (
-                    <div style={{ marginTop: 10, borderTop: '0.5px solid var(--border)', paddingTop: 10 }}>
+                    <div className="mt-2.5 border-t border-border pt-2.5">
                     <button onClick={() => handleDelete(ev.id)}
-                        style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '9px 12px', borderRadius: 8, border: '0.5px solid var(--absent)', background: 'var(--absent-bg)', cursor: 'pointer', fontSize: 13, color: 'var(--absent)', width: '100%' }}>
-                        <span style={{ fontSize: 16 }}>🗑️</span> Delete
+                        className="flex items-center gap-2 px-3 py-2 rounded-lg border border-absent bg-absent-bg cursor-pointer text-[13px] text-absent w-full">
+                        <span className="text-base">🗑️</span> Delete
                     </button>
                     </div>
                 )}
                 </div>
             )
             })}
+        </div>
+        )}
       </div>
 
       {/* Add event modal */}
-      {showForm && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', zIndex: 50, display: 'flex', alignItems: 'flex-end' }}>
-          <div style={{ width: '100%', background: 'var(--surface)', borderRadius: '20px 20px 0 0', padding: 24, paddingBottom: 80, maxHeight: '90vh', overflowY: 'auto' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
-              <div style={{ fontSize: 18, fontWeight: 500, color: 'var(--text)' }}>Add event</div>
-              <button onClick={() => setShowForm(false)}
-                style={{ background: 'none', border: 'none', fontSize: 22, color: 'var(--muted)', cursor: 'pointer', lineHeight: 1 }}>×</button>
-            </div>
-
-            <form onSubmit={handleAdd} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+      <Modal open={showForm} onClose={() => setShowForm(false)} title="Add event">
+            <form onSubmit={handleAdd} className="flex flex-col gap-3">
 
               <input required value={form.name}
                 onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
-                placeholder="Event name e.g. Sports Day" {...inp} />
+                placeholder="Event name e.g. Sports Day" className={inputClass} />
 
               <div>
-                <div style={{ fontSize: 11, color: 'var(--muted)', marginBottom: 4 }}>Date</div>
+                <div className="text-[11px] text-muted mb-1">Date</div>
                 <input required type="date" value={form.date}
-                  onChange={e => setForm(f => ({ ...f, date: e.target.value }))} {...inp} />
+                  onChange={e => setForm(f => ({ ...f, date: e.target.value }))} className={inputClass} />
               </div>
 
               {/* Branch selection */}
               <div>
-                <div style={{ fontSize: 11, color: 'var(--muted)', marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Branches involved</div>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                <div className="text-[11px] text-muted mb-2 uppercase tracking-wider">Branches involved</div>
+                <div className="flex flex-wrap gap-1.5">
                   {branches.map(b => {
                     const selected = form.branches.includes(b.id)
                     return (
                       <button key={b.id} type="button"
                         onClick={() => setForm(f => ({ ...f, branches: toggleItem(f.branches, b.id) }))}
-                        style={{
-                          padding: '6px 14px', borderRadius: 20, fontSize: 12, cursor: 'pointer', transition: 'all 0.15s',
-                          background: selected ? 'var(--present)' : 'var(--bg)',
-                          color: selected ? '#fff' : 'var(--muted)',
-                          border: `0.5px solid ${selected ? 'var(--present)' : 'var(--border)'}`,
-                          fontWeight: selected ? 500 : 400,
-                        }}>
-                        {b.name.replace('Caterpillar_', '')}
+                        className={pillButton(selected, 'present')}>
+                        {cleanBranchName(b.name)}
                       </button>
                     )
                   })}
@@ -233,20 +215,14 @@ export default function Events({ t }) {
 
               {/* Age group selection */}
               <div>
-                <div style={{ fontSize: 11, color: 'var(--muted)', marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Age groups involved</div>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                <div className="text-[11px] text-muted mb-2 uppercase tracking-wider">Age groups involved</div>
+                <div className="flex flex-wrap gap-1.5">
                   {AGE_GROUPS.map(g => {
                     const selected = form.age_groups.includes(g)
                     return (
                       <button key={g} type="button"
                         onClick={() => setForm(f => ({ ...f, age_groups: toggleItem(f.age_groups, g) }))}
-                        style={{
-                          padding: '6px 14px', borderRadius: 20, fontSize: 12, cursor: 'pointer', transition: 'all 0.15s',
-                          background: selected ? 'var(--holiday)' : 'var(--bg)',
-                          color: selected ? '#fff' : 'var(--muted)',
-                          border: `0.5px solid ${selected ? 'var(--holiday)' : 'var(--border)'}`,
-                          fontWeight: selected ? 500 : 400,
-                        }}>
+                        className={pillButton(selected, 'holiday')}>
                         {AGE_GROUP_LABELS[g]}
                       </button>
                     )
@@ -254,26 +230,22 @@ export default function Events({ t }) {
                 </div>
               </div>
 
-              <div style={{ background: 'var(--holiday-bg)', border: '0.5px solid var(--holiday)', borderRadius: 10, padding: '10px 14px', fontSize: 12, color: 'var(--holiday)', lineHeight: 1.6 }}>
+              <div className="bg-holiday-bg border border-holiday rounded-[10px] px-3.5 py-2.5 text-xs text-holiday leading-relaxed">
                 On event day the scanner will only accept students from selected branches and age groups. The "Run now" button will only mark absent students from these groups.
               </div>
 
-              <div style={{ display: 'flex', gap: 10, marginTop: 4 }}>
+              <div className="flex gap-2.5 mt-1">
                 <button type="button" onClick={() => setShowForm(false)}
-                  style={{ flex: 1, background: 'var(--bg)', border: '0.5px solid var(--border)', borderRadius: 10, padding: 12, fontSize: 14, color: 'var(--muted)', cursor: 'pointer' }}>
+                  className="flex-1 bg-page border border-border rounded-[10px] py-3 text-sm text-muted cursor-pointer">
                   Cancel
                 </button>
                 <button type="submit" disabled={saving}
-                  style={{ flex: 1, background: 'var(--present)', border: 'none', borderRadius: 10, padding: 12, fontSize: 14, color: '#fff', fontWeight: 500, cursor: 'pointer', opacity: saving ? 0.6 : 1 }}>
+                  className="flex-1 bg-present border-0 rounded-[10px] py-3 text-sm text-white font-medium cursor-pointer disabled:opacity-60">
                   {saving ? 'Saving...' : 'Save'}
                 </button>
               </div>
             </form>
-          </div>
-        </div>
-      )}
-
-      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+      </Modal>
     </div>
   )
 }

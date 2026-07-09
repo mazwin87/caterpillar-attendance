@@ -1,5 +1,15 @@
 import { useEffect, useState } from 'react'
 import { getStudents, getBranches, addHoliday, supabase } from '../lib/supabase'
+import { cleanBranchName } from '../lib/branch'
+import { CenteredSpinner } from './ui/Spinner'
+import Modal from './ui/Modal'
+
+const inputClass = "w-full bg-page border border-border rounded-[10px] px-3.5 py-2.5 text-sm text-ink outline-none"
+
+const actionsButton = (isOpen) =>
+  `px-3 py-1.5 rounded-lg text-xs cursor-pointer flex-shrink-0 whitespace-nowrap transition-all duration-150 border border-border ${
+    isOpen ? 'bg-border text-ink' : 'bg-page text-muted'
+  }`
 
 export default function Holidays({ t, isAdmin }) {
   const [holidays, setHolidays]     = useState([])
@@ -34,7 +44,6 @@ export default function Holidays({ t, isAdmin }) {
       setStudents(s)
       setBranches(b)
 
-      // Auto delete past closures
       const pastIds = (c || [])
         .filter(closure => {
           const endDate = closure.end_date || closure.date
@@ -55,7 +64,6 @@ export default function Holidays({ t, isAdmin }) {
 
   async function handleAddHoliday(e) {
     e.preventDefault(); setSaving(true)
-    console.log('Holiday form data:', form) // ADD THIS
     try {
       const h = await addHoliday(form)
       const { data } = await supabase
@@ -111,102 +119,80 @@ export default function Holidays({ t, isAdmin }) {
 
   const isUpcoming = c => c.date >= new Date().toISOString().split('T')[0]
 
-  const inp = {
-    style: {
-      width: '100%', background: 'var(--bg)', border: '0.5px solid var(--border)',
-      borderRadius: 10, padding: '11px 14px', fontSize: 14, color: 'var(--text)', outline: 'none'
-    }
-  }
-
   return (
-    <div style={{ minHeight: '100%', background: 'var(--bg)', paddingBottom: 80 }}>
+    <div className="min-h-full bg-page pb-20">
 
       {/* Header */}
-      <div style={{ background: 'var(--surface)', borderBottom: '0.5px solid var(--border)', padding: '52px 20px 0' }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
-          <div style={{ fontSize: 22, fontWeight: 500, color: 'var(--text)' }}>Time Off</div>
+      <div className="pt-[52px] lg:pt-8 bg-surface border-b border-border px-5">
+       <div className="lg:max-w-5xl lg:mx-auto">
+        <div className="flex items-center justify-between mb-4">
+          <div className="text-[22px] font-medium text-ink">Time Off</div>
           {(activeTab === 'holidays' || (activeTab === 'closures' && isAdmin)) && (
             <button
               onClick={() => activeTab === 'holidays' ? setShowForm(true) : setShowClosureForm(true)}
-              style={{
-                background: 'var(--present)',
-                color: '#fff', border: 'none', borderRadius: 20,
-                padding: '8px 16px', fontSize: 13, fontWeight: 500, cursor: 'pointer'
-              }}>
+              className="bg-present text-white border-0 rounded-full px-4 py-2 text-[13px] font-medium cursor-pointer">
               + Add
             </button>
           )}
         </div>
 
         {/* Tabs */}
-        <div style={{ display: 'flex', gap: 0 }}>
+        <div className="lg:max-w-md flex">
           {[
             { key: 'holidays', label: 'Student Leave' },
             { key: 'closures', label: 'School Closures' },
           ].map(tab => (
             <button key={tab.key} onClick={() => setActiveTab(tab.key)}
-              style={{
-                flex: 1, background: 'none', border: 'none', cursor: 'pointer',
-                padding: '10px 0', fontSize: 13, fontWeight: 500,
-                color: activeTab === tab.key ? 'var(--present)' : 'var(--muted)',
-                borderBottom: activeTab === tab.key ? '2px solid var(--present)' : '2px solid transparent',
-                transition: 'all 0.15s',
-              }}>
+              className={`flex-1 bg-transparent border-0 cursor-pointer py-2.5 text-[13px] transition-all duration-150 border-b-2 ${
+                activeTab === tab.key ? 'text-present border-present font-medium' : 'text-muted border-transparent font-normal'
+              }`}>
               {tab.label}
             </button>
           ))}
         </div>
+       </div>
       </div>
 
       {/* Content */}
-      <div style={{ padding: '12px 16px', display: 'flex', flexDirection: 'column', gap: 8 }}
-        onClick={() => { setOpenLeaveMenu(null); setOpenClosureMenu(null) }}>        
+      <div className="lg:max-w-5xl lg:mx-auto p-4 flex flex-col gap-2"
+        onClick={() => { setOpenLeaveMenu(null); setOpenClosureMenu(null) }}>
         {loading ? (
-          <div style={{ textAlign: 'center', padding: 48 }}>
-            <div style={{ width: 24, height: 24, border: '2px solid var(--border)', borderTopColor: 'var(--holiday)', borderRadius: '50%', animation: 'spin 0.8s linear infinite', margin: '0 auto' }} />
-          </div>
+          <CenteredSpinner padding={48} color="var(--holiday)" />
         ) : activeTab === 'holidays' ? (
 
-          // ── Student Leave ──
           holidays.length === 0 ? (
-            <div style={{ textAlign: 'center', color: 'var(--muted)', fontSize: 13, padding: 48 }}>No student leave recorded</div>
+            <div className="text-center text-muted text-[13px] p-12">No student leave recorded</div>
           ) : holidays.map(h => {
             const isOpen = openLeaveMenu === h.id
             return (
               <div key={h.id}
-                style={{ background: 'var(--surface)', border: '0.5px solid var(--border)', borderRadius: 12, padding: '12px 16px' }}
+                className="bg-surface border border-border rounded-xl px-4 py-3"
                 onClick={e => e.stopPropagation()}>
-                <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12 }}>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: 14, fontWeight: 500, color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{h.students?.name}</div>
-                    <div style={{ fontSize: 11, color: 'var(--muted)', marginTop: 2 }}>
-                      {h.students?.student_no} · {h.branches?.name?.replace('Caterpillar_', '')}
+                <div className="flex items-start gap-3">
+                  <div className="flex-1 min-w-0">
+                    <div className="text-sm font-medium text-ink overflow-hidden text-ellipsis whitespace-nowrap">{h.students?.name}</div>
+                    <div className="text-xs text-muted mt-0.5">
+                      {h.students?.student_no} · {cleanBranchName(h.branches?.name)}
                     </div>
-                    <div style={{ fontSize: 12, color: 'var(--holiday)', marginTop: 6 }}>{h.start_date} → {h.end_date}</div>
-                    {h.reason && <div style={{ fontSize: 12, color: 'var(--muted)', marginTop: 3 }}>{h.reason}</div>}
+                    <div className="text-xs text-holiday mt-1.5">{h.start_date} → {h.end_date}</div>
+                    {h.reason && <div className="text-xs text-muted mt-1">{h.reason}</div>}
                   </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+                  <div className="flex items-center gap-2 flex-shrink-0">
                     {isActive(h) && (
-                      <span style={{ background: 'var(--holiday-bg)', color: 'var(--holiday)', fontSize: 10, padding: '3px 10px', borderRadius: 20, fontWeight: 500 }}>Active</span>
+                      <span className="bg-holiday-bg text-holiday text-[10px] px-2.5 py-0.5 rounded-full font-medium">Active</span>
                     )}
                     <button onClick={e => { e.stopPropagation(); setOpenLeaveMenu(isOpen ? null : h.id) }}
-                      style={{
-                        padding: '6px 12px', borderRadius: 8, fontSize: 12, cursor: 'pointer',
-                        flexShrink: 0, whiteSpace: 'nowrap', transition: 'all 0.15s',
-                        background: isOpen ? 'var(--border)' : 'var(--bg)',
-                        border: '0.5px solid var(--border)',
-                        color: isOpen ? 'var(--text)' : 'var(--muted)',
-                      }}>
+                      className={actionsButton(isOpen)}>
                       Actions
                     </button>
                   </div>
                 </div>
 
                 {isOpen && (
-                  <div style={{ marginTop: 10, borderTop: '0.5px solid var(--border)', paddingTop: 10 }}>
+                  <div className="mt-2.5 border-t border-border pt-2.5">
                     <button onClick={() => handleDeleteHoliday(h.id)}
-                      style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '9px 12px', borderRadius: 8, border: '0.5px solid var(--absent)', background: 'var(--absent-bg)', cursor: 'pointer', fontSize: 13, color: 'var(--absent)', width: '100%' }}>
-                      <span style={{ fontSize: 16 }}>🗑️</span> Delete
+                      className="flex items-center gap-2 px-3 py-2 rounded-lg border border-absent bg-absent-bg cursor-pointer text-[13px] text-absent w-full">
+                      <span className="text-base">🗑️</span> Delete
                     </button>
                   </div>
                 )}
@@ -216,23 +202,22 @@ export default function Holidays({ t, isAdmin }) {
 
         ) : (
 
-          // ── School Closures ──
           <>
-            <div style={{ fontSize: 12, color: 'var(--muted)', padding: '4px 0 8px' }}>
+            <div className="text-xs text-muted py-2 px-0">
               On these days the cron will not run — no absent marking or notifications will be sent.
             </div>
             {closures.length === 0 ? (
-              <div style={{ textAlign: 'center', color: 'var(--muted)', fontSize: 13, padding: 48 }}>No school closures added</div>
+              <div className="text-center text-muted text-[13px] p-12">No school closures added</div>
             ) : closures.map(c => {
                   const isOpen = openClosureMenu === c.id
                   return (
                     <div key={c.id}
-                      style={{ background: 'var(--surface)', border: '0.5px solid var(--border)', borderRadius: 12, padding: '12px 16px' }}
+                      className="bg-surface border border-border rounded-xl px-4 py-3"
                       onClick={e => e.stopPropagation()}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                        <div style={{ flex: 1, minWidth: 0 }}>
-                          <div style={{ fontSize: 14, fontWeight: 500, color: 'var(--text)' }}>{c.label}</div>
-                          <div style={{ fontSize: 12, color: isUpcoming(c) ? 'var(--holiday)' : 'var(--muted)', marginTop: 4 }}>
+                      <div className="flex items-center gap-3">
+                        <div className="flex-1 min-w-0">
+                          <div className="text-sm font-medium text-ink">{c.label}</div>
+                          <div className={`text-xs mt-1 ${isUpcoming(c) ? 'text-holiday' : 'text-muted'}`}>
                             {c.end_date && c.end_date !== c.date
                               ? `${new Date(c.date).toLocaleDateString('en-MY', { day: 'numeric', month: 'long', year: 'numeric' })} — ${new Date(c.end_date).toLocaleDateString('en-MY', { day: 'numeric', month: 'long', year: 'numeric' })}`
                               : new Date(c.date).toLocaleDateString('en-MY', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
@@ -240,28 +225,22 @@ export default function Holidays({ t, isAdmin }) {
                           </div>
                         </div>
                         {isUpcoming(c) && (
-                          <span style={{ background: 'var(--holiday-bg)', color: 'var(--holiday)', fontSize: 10, padding: '3px 10px', borderRadius: 20, fontWeight: 500, flexShrink: 0 }}>Upcoming</span>
+                          <span className="bg-holiday-bg text-holiday text-[10px] px-2.5 py-0.5 rounded-full font-medium flex-shrink-0">Upcoming</span>
                         )}
                         {isAdmin && (
                           <button onClick={e => { e.stopPropagation(); setOpenClosureMenu(isOpen ? null : c.id) }}
-                            style={{
-                              padding: '6px 12px', borderRadius: 8, fontSize: 12, cursor: 'pointer',
-                              flexShrink: 0, whiteSpace: 'nowrap', transition: 'all 0.15s',
-                              background: isOpen ? 'var(--border)' : 'var(--bg)',
-                              border: '0.5px solid var(--border)',
-                              color: isOpen ? 'var(--text)' : 'var(--muted)',
-                            }}>
+                            className={actionsButton(isOpen)}>
                             Actions
                           </button>
                         )}
                       </div>
 
                       {isOpen && (
-                        <div style={{ marginTop: 10, borderTop: '0.5px solid var(--border)', paddingTop: 10 }}>
-                          <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 6 }}>
+                        <div className="mt-2.5 border-t border-border pt-2.5">
+                          <div className="grid grid-cols-1 gap-1.5">
                             <button onClick={() => handleDeleteClosure(c.id)}
-                              style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '9px 12px', borderRadius: 8, border: '0.5px solid var(--absent)', background: 'var(--absent-bg)', cursor: 'pointer', fontSize: 13, color: 'var(--absent)' }}>
-                              <span style={{ fontSize: 16 }}>🗑️</span> Delete
+                              className="flex items-center gap-2 px-3 py-2 rounded-lg border border-absent bg-absent-bg cursor-pointer text-[13px] text-absent">
+                              <span className="text-base">🗑️</span> Delete
                             </button>
                           </div>
                         </div>
@@ -274,95 +253,77 @@ export default function Holidays({ t, isAdmin }) {
       </div>
 
       {/* Add student leave modal */}
-      {showForm && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', zIndex: 50, display: 'flex', alignItems: 'flex-end' }}>
-          <div style={{ width: '100%', background: 'var(--surface)', borderRadius: '20px 20px 0 0', padding: 24, paddingBottom:80, maxHeight: '85vh', overflowY: 'auto' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
-              <div style={{ fontSize: 18, fontWeight: 500, color: 'var(--text)' }}>Add student leave</div>
-              <button onClick={() => setShowForm(false)} style={{ background: 'none', border: 'none', fontSize: 22, color: 'var(--muted)', cursor: 'pointer', lineHeight: 1 }}>×</button>
-            </div>
-            <form onSubmit={handleAddHoliday} style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+      <Modal open={showForm} onClose={() => setShowForm(false)} title="Add student leave">
+            <form onSubmit={handleAddHoliday} className="flex flex-col gap-2.5">
               <select required value={form.branch_id}
-                onChange={e => setForm(f => ({ ...f, branch_id: e.target.value, student_id: '' }))} {...inp}>
+                onChange={e => setForm(f => ({ ...f, branch_id: e.target.value, student_id: '' }))} className={inputClass}>
                 <option value="">Select branch</option>
                 {branches.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
               </select>
               <select required value={form.student_id}
-                onChange={e => setForm(f => ({ ...f, student_id: e.target.value }))} {...inp}>
+                onChange={e => setForm(f => ({ ...f, student_id: e.target.value }))} className={inputClass}>
                 <option value="">Select student</option>
                 {students.filter(s => !form.branch_id || s.branch_id === form.branch_id).map(s => (
                   <option key={s.id} value={s.id}>{s.name} ({s.student_no})</option>
                 ))}
               </select>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+              <div className="grid grid-cols-2 gap-2">
                 <div>
-                  <div style={{ fontSize: 11, color: 'var(--muted)', marginBottom: 4 }}>Start date</div>
-                  <input required type="date" value={form.start_date} onChange={e => setForm(f => ({ ...f, start_date: e.target.value }))} {...inp} />
+                  <div className="text-[11px] text-muted mb-1">Start date</div>
+                  <input required type="date" value={form.start_date} onChange={e => setForm(f => ({ ...f, start_date: e.target.value }))} className={inputClass} />
                 </div>
                 <div>
-                  <div style={{ fontSize: 11, color: 'var(--muted)', marginBottom: 4 }}>End date</div>
-                  <input required type="date" value={form.end_date} onChange={e => setForm(f => ({ ...f, end_date: e.target.value }))} {...inp} />
+                  <div className="text-[11px] text-muted mb-1">End date</div>
+                  <input required type="date" value={form.end_date} onChange={e => setForm(f => ({ ...f, end_date: e.target.value }))} className={inputClass} />
                 </div>
               </div>
-              <input value={form.reason} onChange={e => setForm(f => ({ ...f, reason: e.target.value }))} placeholder="Reason (optional)" {...inp} />
-              <div style={{ display: 'flex', gap: 10, marginTop: 8 }}>
+              <input value={form.reason} onChange={e => setForm(f => ({ ...f, reason: e.target.value }))} placeholder="Reason (optional)" className={inputClass} />
+              <div className="flex gap-2.5 mt-1">
                 <button type="button" onClick={() => setShowForm(false)}
-                  style={{ flex: 1, background: 'var(--bg)', border: '0.5px solid var(--border)', borderRadius: 10, padding: 12, fontSize: 14, color: 'var(--muted)', cursor: 'pointer' }}>
+                  className="flex-1 bg-page border border-border rounded-[10px] py-3 text-sm text-muted cursor-pointer">
                   Cancel
                 </button>
                 <button type="submit" disabled={saving}
-                  style={{ flex: 1, background: 'var(--present)', border: 'none', borderRadius: 10, padding: 12, fontSize: 14, color: '#fff', fontWeight: 500, cursor: 'pointer', opacity: saving ? 0.6 : 1 }}>
+                  className="flex-1 bg-present border-0 rounded-[10px] py-3 text-sm text-white font-medium cursor-pointer disabled:opacity-60">
                   {saving ? 'Saving...' : 'Save'}
                 </button>
               </div>
             </form>
-          </div>
-        </div>
-      )}
+      </Modal>
 
       {/* Add school closure modal */}
-      {showClosureForm && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', zIndex: 50, display: 'flex', alignItems: 'flex-end'}}>
-          <div style={{ width: '100%', background: 'var(--surface)', borderRadius: '20px 20px 0 0', padding: 24, paddingBottom:80 }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
-              <div style={{ fontSize: 18, fontWeight: 500, color: 'var(--text)' }}>Add school closure</div>
-              <button onClick={() => setShowClosureForm(false)} style={{ background: 'none', border: 'none', fontSize: 22, color: 'var(--muted)', cursor: 'pointer', lineHeight: 1 }}>×</button>
-            </div>
-            <form onSubmit={handleAddClosure} style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+      <Modal open={showClosureForm} onClose={() => setShowClosureForm(false)} title="Add school closure">
+            <form onSubmit={handleAddClosure} className="flex flex-col gap-2.5">
               <input required value={closureForm.label}
                 onChange={e => setClosureForm(f => ({ ...f, label: e.target.value }))}
-                placeholder="e.g. Hari Raya Aidilfitri" {...inp} />
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+                placeholder="e.g. Hari Raya Aidilfitri" className={inputClass} />
+              <div className="grid grid-cols-2 gap-2">
               <div>
-                <div style={{ fontSize: 11, color: 'var(--muted)', marginBottom: 4 }}>Start date</div>
+                <div className="text-[11px] text-muted mb-1">Start date</div>
                 <input required type="date" value={closureForm.date}
-                  onChange={e => setClosureForm(f => ({ ...f, date: e.target.value }))} {...inp} />
+                  onChange={e => setClosureForm(f => ({ ...f, date: e.target.value }))} className={inputClass} />
               </div>
               <div>
-                <div style={{ fontSize: 11, color: 'var(--muted)', marginBottom: 4 }}>End date</div>
+                <div className="text-[11px] text-muted mb-1">End date</div>
                 <input required type="date" value={closureForm.end_date}
-                  onChange={e => setClosureForm(f => ({ ...f, end_date: e.target.value }))} {...inp} />
+                  onChange={e => setClosureForm(f => ({ ...f, end_date: e.target.value }))} className={inputClass} />
               </div>
             </div>
-              <div style={{ background: 'var(--absent-bg)', border: '0.5px solid var(--absent)', borderRadius: 10, padding: '10px 14px', fontSize: 12, color: 'var(--absent)', lineHeight: 1.6 }}>
+              <div className="bg-absent-bg border border-absent rounded-[10px] px-3.5 py-2.5 text-xs text-absent leading-relaxed">
                 On this date the system will NOT mark anyone absent or send notifications.
               </div>
-              <div style={{ display: 'flex', gap: 10, marginTop: 8 }}>
+              <div className="flex gap-2.5 mt-1">
                 <button type="button" onClick={() => setShowClosureForm(false)}
-                  style={{ flex: 1, background: 'var(--bg)', border: '0.5px solid var(--border)', borderRadius: 10, padding: 12, fontSize: 14, color: 'var(--muted)', cursor: 'pointer' }}>
+                  className="flex-1 bg-page border border-border rounded-[10px] py-3 text-sm text-muted cursor-pointer">
                   Cancel
                 </button>
                 <button type="submit" disabled={saving}
-                  style={{ flex: 1, background: 'var(--present)', border: 'none', borderRadius: 10, padding: 12, fontSize: 14, color: '#fff', fontWeight: 500, cursor: 'pointer', opacity: saving ? 0.6 : 1 }}>
+                  className="flex-1 bg-present border-0 rounded-[10px] py-3 text-sm text-white font-medium cursor-pointer disabled:opacity-60">
                   {saving ? 'Saving...' : 'Save'}
                 </button>
               </div>
             </form>
-          </div>
-        </div>
-      )}
-
-      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+      </Modal>
     </div>
   )
 }

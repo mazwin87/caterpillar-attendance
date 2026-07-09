@@ -6,6 +6,8 @@ import { MdOutlineArrowBack, MdOutlineLockReset, MdClose } from 'react-icons/md'
 const ROLE_LABEL = { admin: 'Admin', teacher: 'Teacher' }
 const ROLE_COLOR = { admin: '#4a6fa5', teacher: '#2d7a4f' }
 
+const inputClass = "w-full box-border bg-page border border-border rounded-[10px] px-4 py-3.5 text-[15px] text-ink outline-none"
+
 export default function ManageUsers({ session }) {
   const navigate = useNavigate()
   const [users,       setUsers]       = useState([])
@@ -66,54 +68,40 @@ export default function ManageUsers({ session }) {
     setTimeout(() => setToast(''), 3000)
   }
 
-  const inp = {
-    style: {
-      width: '100%',
-      background: 'var(--bg)',
-      border: '0.5px solid var(--border)',
-      borderRadius: 10,
-      padding: '13px 16px',
-      fontSize: 15,
-      color: 'var(--text)',
-      outline: 'none',
-      boxSizing: 'border-box',
-    }
-  }
-
   return (
-    <div style={{ minHeight: '100%', background: 'var(--bg)', paddingBottom: 'var(--navbar-height)' }}>
+    <div className="min-h-full bg-page" style={{ paddingBottom: 'var(--navbar-height)' }}>
 
       {/* Header */}
-      <div style={{ background: 'var(--surface)', borderBottom: '0.5px solid var(--border)', padding: '52px 20px 20px', display: 'flex', alignItems: 'center', gap: 12 }}>
+      <div className="pt-[52px] lg:pt-8 bg-surface border-b border-border pb-5 px-5 flex items-center gap-3">
         <button onClick={() => navigate('/admin')}
-          style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--muted)', padding: 0, display: 'flex' }}>
+          className="bg-transparent border-0 cursor-pointer text-muted p-0 flex">
           <MdOutlineArrowBack size={22} />
         </button>
         <div>
-          <div style={{ fontSize: 11, color: 'var(--muted)', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 4 }}>Admin Panel</div>
-          <div style={{ fontSize: 22, fontWeight: 500, color: 'var(--text)' }}>Manage Users</div>
+          <div className="text-[11px] text-muted tracking-[0.08em] uppercase mb-1">Admin Panel</div>
+          <div className="text-[22px] font-medium text-ink">Manage Users</div>
         </div>
       </div>
 
       {/* User list */}
-      <div style={{ padding: '20px 16px', display: 'flex', flexDirection: 'column', gap: 10 }}>
+      <div className="lg:max-w-5xl grid grid-cols-1 lg:grid-cols-2 gap-2.5 p-4 py-5">
         {loading ? (
-          <div style={{ textAlign: 'center', color: 'var(--muted)', padding: 40 }}>Loading...</div>
+          <div className="text-center text-muted p-10">Loading...</div>
         ) : users.length === 0 ? (
-          <div style={{ textAlign: 'center', color: 'var(--muted)', padding: 40 }}>No users found.</div>
+          <div className="text-center text-muted p-10">No users found.</div>
         ) : users.map(u => (
-          <div key={u.id} style={{ background: 'var(--surface)', border: '0.5px solid var(--border)', borderRadius: 14, padding: '16px 20px', display: 'flex', alignItems: 'center', gap: 12 }}>
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontSize: 15, fontWeight: 500, color: 'var(--text)' }}>{u.username}</div>
-              <div style={{ fontSize: 12, color: 'var(--muted)', marginTop: 2 }}>
-                <span style={{ color: ROLE_COLOR[u.role] || 'var(--muted)', fontWeight: 500 }}>
+          <div key={u.id} className="bg-surface border border-border rounded-2xl px-5 py-4 flex items-center gap-3">
+            <div className="flex-1 min-w-0">
+              <div className="text-[15px] font-medium text-ink">{u.username}</div>
+              <div className="text-xs text-muted mt-0.5">
+                <span style={{ color: ROLE_COLOR[u.role] || 'var(--muted)' }} className="font-medium">
                   {ROLE_LABEL[u.role] || u.role}
                 </span>
                 {u.branches?.name && ` · ${u.branches.name}`}
               </div>
             </div>
             <button onClick={() => openReset(u)}
-              style={{ background: 'var(--bg)', border: '0.5px solid var(--border)', borderRadius: 8, padding: '8px 14px', fontSize: 12, color: 'var(--text)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
+              className="bg-page border border-border rounded-lg px-3.5 py-2 text-xs text-ink cursor-pointer flex items-center gap-1.5 flex-shrink-0">
               <MdOutlineLockReset size={15} />
               Reset
             </button>
@@ -123,33 +111,33 @@ export default function ManageUsers({ session }) {
 
       {/* Reset password modal */}
       {resetUser && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24, zIndex: 100 }}>
-          <div style={{ background: 'var(--surface)', borderRadius: 16, padding: 24, width: '100%', maxWidth: 360, border: '0.5px solid var(--border)' }}>
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-black/50">
+          <div className="bg-surface rounded-2xl p-6 w-full max-w-[360px] border border-border">
 
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
-              <div style={{ fontSize: 16, fontWeight: 500, color: 'var(--text)' }}>Reset Password</div>
+            <div className="flex items-center justify-between mb-4">
+              <div className="text-base font-medium text-ink">Reset Password</div>
               <button onClick={() => setResetUser(null)}
-                style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--muted)', padding: 0, display: 'flex' }}>
+                className="bg-transparent border-0 cursor-pointer text-muted p-0 flex">
                 <MdClose size={20} />
               </button>
             </div>
 
-            <div style={{ fontSize: 13, color: 'var(--muted)', marginBottom: 16 }}>
-              Setting a new password for <strong style={{ color: 'var(--text)' }}>{resetUser.username}</strong>.
+            <div className="text-[13px] text-muted mb-4">
+              Setting a new password for <strong className="text-ink">{resetUser.username}</strong>.
             </div>
 
-            <form onSubmit={handleReset} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-              <input required type="password" value={newPass} onChange={e => setNewPass(e.target.value)} placeholder="New password" {...inp} />
-              <input required type="password" value={confirmPass} onChange={e => setConfirmPass(e.target.value)} placeholder="Confirm new password" {...inp} />
+            <form onSubmit={handleReset} className="flex flex-col gap-3">
+              <input required type="password" value={newPass} onChange={e => setNewPass(e.target.value)} placeholder="New password" className={inputClass} />
+              <input required type="password" value={confirmPass} onChange={e => setConfirmPass(e.target.value)} placeholder="Confirm new password" className={inputClass} />
 
               {error && (
-                <div style={{ background: 'var(--absent-bg)', border: '0.5px solid var(--absent)', borderRadius: 8, padding: '10px 14px', fontSize: 13, color: 'var(--absent)' }}>
+                <div className="bg-absent-bg border border-absent rounded-lg px-3.5 py-2.5 text-[13px] text-absent">
                   {error}
                 </div>
               )}
 
               <button type="submit" disabled={saving}
-                style={{ background: 'var(--present)', color: '#fff', border: 'none', borderRadius: 10, padding: 14, fontSize: 15, fontWeight: 500, cursor: 'pointer', opacity: saving ? 0.7 : 1 }}>
+                className="bg-present text-white border-0 rounded-[10px] py-3.5 text-[15px] font-medium cursor-pointer disabled:opacity-70">
                 {saving ? 'Saving...' : 'Reset Password'}
               </button>
             </form>
@@ -159,7 +147,10 @@ export default function ManageUsers({ session }) {
 
       {/* Toast */}
       {toast && (
-        <div style={{ position: 'fixed', bottom: 'calc(var(--navbar-height) + 16px)', left: '50%', transform: 'translateX(-50%)', background: '#1a1a1a', color: '#fff', borderRadius: 10, padding: '10px 20px', fontSize: 13, zIndex: 200, whiteSpace: 'nowrap' }}>
+        <div
+          className="fixed left-1/2 -translate-x-1/2 z-[200] bg-[#1a1a1a] text-white rounded-[10px] px-5 py-2.5 text-[13px] whitespace-nowrap"
+          style={{ bottom: 'calc(var(--navbar-height) + 16px)' }}
+        >
           {toast}
         </div>
       )}

@@ -1,8 +1,16 @@
 import { useEffect, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
+import { MONTHS } from '../lib/constants'
+import Spinner from './ui/Spinner'
 
-const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December']
+const checkboxBase = "w-3.5 h-3.5 border-[1.5px] border-[#333] flex-shrink-0 flex items-center justify-center text-[10px] font-bold"
+
+function Checkbox({ checked }) {
+  return (
+    <div className={checkboxBase} style={{ background: checked ? '#1a1a1a' : '#fff', color: checked ? '#fff' : 'transparent' }}>✓</div>
+  )
+}
 
 export default function Receipt() {
   const { id } = useParams()
@@ -24,17 +32,16 @@ export default function Receipt() {
   }, [id])
 
   if (loading) return (
-    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f8f8f6' }}>
-      <div style={{ width: 24, height: 24, border: '2px solid #e0e0e0', borderTopColor: '#2d7a4f', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
-      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+    <div className="min-h-screen flex items-center justify-center bg-page">
+      <Spinner color="var(--primary)" />
     </div>
   )
 
   if (notFound) return (
-    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f8f8f6', flexDirection: 'column', gap: 12 }}>
-      <div style={{ fontSize: 48 }}>🔍</div>
-      <div style={{ fontSize: 18, fontWeight: 500, color: '#1a1a1a' }}>Receipt not found</div>
-      <div style={{ fontSize: 13, color: '#888' }}>This receipt may have been deleted or the link is invalid.</div>
+    <div className="min-h-screen flex flex-col items-center justify-center gap-3 bg-page">
+      <div className="text-5xl">🔍</div>
+      <div className="text-lg font-medium text-ink">Receipt not found</div>
+      <div className="text-[13px] text-muted">This receipt may have been deleted or the link is invalid.</div>
     </div>
   )
 
@@ -43,163 +50,142 @@ export default function Receipt() {
   const today = new Date(payment.paid_date).toLocaleDateString('en-MY', { day: 'numeric', month: 'long', year: 'numeric' })
 
   return (
-    <div style={{ background: '#f0f0f0', minHeight: '100vh', padding: '24px 16px' }}>
-      <div id="receipt-content" style={{
-        background: '#fff', maxWidth: 680, margin: '0 auto',
-        padding: '32px', fontFamily: 'Arial, sans-serif', borderRadius: 8,
-        boxShadow: '0 2px 16px rgba(0,0,0,0.08)',
-      }}>
+    <div className="min-h-screen bg-page px-4 py-6">
+      <div id="receipt-content" className="bg-white max-w-[680px] mx-auto p-8 rounded-lg shadow-[0_2px_16px_rgba(0,0,0,0.08)]" style={{ fontFamily: 'Arial, sans-serif' }}>
 
         {/* Header */}
-        <div style={{ display: 'flex', alignItems: 'flex-start', gap: 16, borderBottom: '2px solid #1a1a1a', paddingBottom: 16, marginBottom: 20 }}>
-          <img src="/logo.png" alt="Logo" style={{ width: 80, height: 80, objectFit: 'contain', flexShrink: 0 }} />
-          <div style={{ flex: 1 }}>
-            <div style={{ fontSize: 18, fontWeight: 700, color: '#1a1a1a', textTransform: 'uppercase', marginBottom: 4 }}>
+        <div className="flex items-start gap-4 border-b-2 border-[#1a1a1a] pb-4 mb-5">
+          <img src="/logo.png" alt="Logo" className="w-20 h-20 object-contain flex-shrink-0" />
+          <div className="flex-1">
+            <div className="text-lg font-bold text-[#1a1a1a] uppercase mb-1">
               Caterpillar Playtime Child Care Centre
             </div>
-            <div style={{ fontSize: 11, color: '#333', lineHeight: 1.7 }}>
+            <div className="text-[11px] text-[#333] leading-relaxed">
               <div>{b?.reg_no}</div>
               <div>{b?.address}</div>
               <div>📞 {b?.phone} &nbsp;🌐 {b?.website} &nbsp;✉️ {b?.email}</div>
             </div>
           </div>
-          <div style={{ textAlign: 'right', flexShrink: 0 }}>
-            <div style={{ fontSize: 11, color: '#888' }}>№</div>
-            <div style={{ fontSize: 28, fontWeight: 700, color: '#c0392b' }}>
+          <div className="text-right flex-shrink-0">
+            <div className="text-[11px] text-[#888]">№</div>
+            <div className="text-[28px] font-bold text-[#c0392b]">
               {payment.receipt_no?.split('-').pop()}
             </div>
-            <div style={{ fontSize: 10, color: '#888', marginTop: 2 }}>{payment.receipt_no}</div>
+            <div className="text-[10px] text-[#888] mt-0.5">{payment.receipt_no}</div>
           </div>
         </div>
 
         {/* Name & Date */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 20, fontSize: 13, borderBottom: '1px solid #e0e0e0', paddingBottom: 12 }}>
-          <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-            <span style={{ fontWeight: 600 }}>Name:</span>
-            <span style={{ borderBottom: '1px solid #999', minWidth: 200, paddingBottom: 2 }}>{s?.name}</span>
+        <div className="flex justify-between mb-5 text-[13px] border-b border-[#e0e0e0] pb-3">
+          <div className="flex gap-2 items-center">
+            <span className="font-semibold">Name:</span>
+            <span className="border-b border-[#999] min-w-[200px] pb-0.5">{s?.name}</span>
           </div>
-          <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-            <span style={{ fontWeight: 600 }}>Date:</span>
-            <span style={{ borderBottom: '1px solid #999', paddingBottom: 2 }}>{today}</span>
+          <div className="flex gap-2 items-center">
+            <span className="font-semibold">Date:</span>
+            <span className="border-b border-[#999] pb-0.5">{today}</span>
           </div>
         </div>
 
         {/* Fee type checkboxes */}
-        <div style={{ marginBottom: 16 }}>
-          <div style={{ display: 'flex', gap: 24, marginBottom: 12, flexWrap: 'wrap' }}>
+        <div className="mb-4">
+          <div className="flex gap-6 mb-3 flex-wrap">
             {[
               { label: 'Enrollment Fee', checked: false },
               { label: 'Monthly Fee',    checked: true  },
               { label: 'Transit',        checked: false },
             ].map(item => (
-              <div key={item.label} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13 }}>
-                <div style={{
-                  width: 14, height: 14, border: '1.5px solid #333', flexShrink: 0,
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  fontSize: 10, fontWeight: 700,
-                  background: item.checked ? '#1a1a1a' : '#fff',
-                  color: item.checked ? '#fff' : 'transparent',
-                }}>✓</div>
+              <div key={item.label} className="flex items-center gap-1.5 text-[13px]">
+                <Checkbox checked={item.checked} />
                 <span>{item.label}</span>
               </div>
             ))}
           </div>
 
           {/* Month checkboxes */}
-          <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginBottom: 12 }}>
+          <div className="flex gap-2.5 flex-wrap mb-3">
             {MONTHS.map(m => (
-              <div key={m} style={{ textAlign: 'center', fontSize: 11 }}>
-                <div style={{
-                  width: 24, height: 24, border: '1.5px solid #333', margin: '0 auto 2px',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  fontSize: 10, fontWeight: 700,
-                  background: m === payment.month ? '#1a1a1a' : '#fff',
-                  color: m === payment.month ? '#fff' : 'transparent',
-                }}>✓</div>
+              <div key={m} className="text-center text-[11px]">
+                <div className="w-6 h-6 border-[1.5px] border-[#333] mx-auto mb-0.5 flex items-center justify-center text-[10px] font-bold"
+                  style={{ background: m === payment.month ? '#1a1a1a' : '#fff', color: m === payment.month ? '#fff' : 'transparent' }}>✓</div>
                 <div>{m.substring(0, 3)}</div>
               </div>
             ))}
           </div>
 
           {/* Amount */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, fontWeight: 600, marginBottom: 16 }}>
+          <div className="flex items-center gap-2 text-[13px] font-semibold mb-4">
             <span>RM</span>
-            <span style={{ borderBottom: '1px solid #999', minWidth: 120, paddingBottom: 2 }}>
+            <span className="border-b border-[#999] min-w-[120px] pb-0.5">
               {parseFloat(payment.amount).toFixed(2)}
             </span>
           </div>
         </div>
 
         {/* Other fees (empty) */}
-        <div style={{ borderTop: '1px solid #ddd', paddingTop: 12, marginBottom: 16 }}>
-          <div style={{ display: 'flex', gap: 20, flexWrap: 'wrap', marginBottom: 8 }}>
+        <div className="border-t border-[#ddd] pt-3 mb-4">
+          <div className="flex gap-5 flex-wrap mb-2">
             {['Learning Materials', 'Child Care (Full Day)', 'Misc.'].map(item => (
-              <div key={item} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12 }}>
-                <div style={{ width: 14, height: 14, border: '1.5px solid #333', flexShrink: 0 }}></div>
+              <div key={item} className="flex items-center gap-1.5 text-xs">
+                <div className="w-3.5 h-3.5 border-[1.5px] border-[#333] flex-shrink-0"></div>
                 <span>{item}</span>
               </div>
             ))}
           </div>
-          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 8 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12 }}>
-              <div style={{ width: 14, height: 14, border: '1.5px solid #333', flexShrink: 0 }}></div>
+          <div className="flex gap-2 flex-wrap mb-2">
+            <div className="flex items-center gap-1.5 text-xs">
+              <div className="w-3.5 h-3.5 border-[1.5px] border-[#333] flex-shrink-0"></div>
               <span>Other Fee</span>
             </div>
             {['Registration', 'Insurance', 'Transport', 'Uniform'].map(item => (
-              <div key={item} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12 }}>
-                <div style={{ width: 14, height: 14, border: '1.5px solid #333', flexShrink: 0 }}></div>
+              <div key={item} className="flex items-center gap-1.5 text-xs">
+                <div className="w-3.5 h-3.5 border-[1.5px] border-[#333] flex-shrink-0"></div>
                 <span>{item}</span>
               </div>
             ))}
           </div>
-          <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginBottom: 8, marginLeft: 20 }}>
+          <div className="flex gap-3 flex-wrap mb-2 ml-5">
             {['Child Care (Half Day)', 'Emergency Child Care', 'Others'].map(item => (
-              <div key={item} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12 }}>
-                <div style={{ width: 14, height: 14, border: '1.5px solid #333', flexShrink: 0 }}></div>
+              <div key={item} className="flex items-center gap-1.5 text-xs">
+                <div className="w-3.5 h-3.5 border-[1.5px] border-[#333] flex-shrink-0"></div>
                 <span>{item}</span>
               </div>
             ))}
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, fontWeight: 600 }}>
+          <div className="flex items-center gap-2 text-[13px] font-semibold">
             <span>RM</span>
-            <span style={{ borderBottom: '1px solid #999', minWidth: 120, paddingBottom: 2 }}></span>
+            <span className="border-b border-[#999] min-w-[120px] pb-0.5"></span>
           </div>
         </div>
 
         {/* Total */}
-        <div style={{ borderTop: '2px solid #1a1a1a', paddingTop: 12, marginBottom: 20, display: 'flex', alignItems: 'center', gap: 12 }}>
-          <span style={{ fontSize: 16, fontWeight: 700 }}>TOTAL RM</span>
-          <span style={{ borderBottom: '2px solid #1a1a1a', minWidth: 160, fontSize: 16, fontWeight: 700, paddingBottom: 2 }}>
+        <div className="border-t-2 border-[#1a1a1a] pt-3 mb-5 flex items-center gap-3">
+          <span className="text-base font-bold">TOTAL RM</span>
+          <span className="border-b-2 border-[#1a1a1a] min-w-[160px] text-base font-bold pb-0.5">
             {parseFloat(payment.amount).toFixed(2)}
           </span>
         </div>
 
         {/* Footer */}
-        <div style={{ borderTop: '1px solid #ddd', paddingTop: 12, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', fontSize: 12 }}>
+        <div className="border-t border-[#ddd] pt-3 flex justify-between items-start text-xs">
           <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6, flexWrap: 'wrap' }}>
+            <div className="flex items-center gap-2 mb-1.5 flex-wrap">
               <span>Payment Method:</span>
               {['Bank Transfer', 'Cheque', 'Cash'].map(m => (
-                <div key={m} style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                  <div style={{
-                    width: 14, height: 14, border: '1.5px solid #333',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    fontSize: 10, fontWeight: 700,
-                    background: payment.payment_method === m ? '#1a1a1a' : '#fff',
-                    color: payment.payment_method === m ? '#fff' : 'transparent',
-                  }}>✓</div>
+                <div key={m} className="flex items-center gap-1">
+                  <Checkbox checked={payment.payment_method === m} />
                   <span>{m}</span>
                 </div>
               ))}
             </div>
-            <div style={{ marginBottom: 6 }}>
+            <div className="mb-1.5">
               Date &amp; time: {today}
             </div>
-            <div style={{ fontSize: 11, color: '#555' }}>All Fees paid are non refundable / transferable.</div>
+            <div className="text-[11px] text-[#555]">All Fees paid are non refundable / transferable.</div>
           </div>
-          <div style={{ textAlign: 'right', fontStyle: 'italic' }}>
-            <div style={{ marginBottom: 20 }}>Issued by</div>
-            <div style={{ borderTop: '1px solid #999', minWidth: 120, paddingTop: 4, fontSize: 11 }}>
+          <div className="text-right italic">
+            <div className="mb-5">Issued by</div>
+            <div className="border-t border-[#999] min-w-[120px] pt-1 text-[11px]">
               {payment.issued_by || 'Admin'}
             </div>
           </div>
@@ -208,9 +194,9 @@ export default function Receipt() {
       </div>
 
       {/* Print button */}
-      <div style={{ maxWidth: 680, margin: '16px auto', textAlign: 'center' }}>
+      <div className="max-w-[680px] mx-auto my-4 text-center">
         <button onClick={() => window.print()}
-          style={{ background: '#2d7a4f', color: '#fff', border: 'none', borderRadius: 10, padding: '12px 32px', fontSize: 14, fontWeight: 500, cursor: 'pointer' }}>
+          className="bg-primary text-white border-0 rounded-[10px] px-8 py-3 text-sm font-medium cursor-pointer">
           🖨️ Print Receipt
         </button>
       </div>
@@ -221,7 +207,6 @@ export default function Receipt() {
           button { display: none !important; }
           #receipt-content { box-shadow: none; border-radius: 0; padding: 16px; }
         }
-        @keyframes spin { to { transform: rotate(360deg); } }
       `}</style>
     </div>
   )

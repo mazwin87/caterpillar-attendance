@@ -1,12 +1,28 @@
 import { useEffect, useRef, useState } from 'react'
 import { Html5Qrcode } from 'html5-qrcode'
 import { recordScan, supabase } from '../lib/supabase'
+import { cleanBranchName } from '../lib/branch'
 
 const STATUS_CONFIG = {
   PRESENT: { bg: '#00e67622', icon: '✅', badge: 'bg-[#00e676]/20 text-[#00e676]' },
   LATE:    { bg: '#ffd60022', icon: '⏰', badge: 'bg-[#ffd600]/20 text-[#ffd600]' },
   ERROR:   { bg: '#ff174422', icon: '❌', badge: 'bg-[#ff1744]/20 text-[#ff1744]' },
   DUP:     { bg: '#2979ff22', icon: '🔁', badge: 'bg-[#2979ff]/20 text-[#2979ff]' },
+}
+
+// Static Tailwind classes for the manual attendance row states.
+const ROW_CLASSES = {
+  PRESENT: 'bg-present-bg border-present',
+  LATE:    'bg-late-bg border-late',
+  ABSENT:  'bg-absent-bg border-absent',
+  HOLIDAY: 'bg-holiday-bg border-holiday',
+  DEFAULT: 'bg-surface border-border',
+}
+const AVATAR_CLASSES = {
+  PRESENT: 'bg-present',
+  LATE:    'bg-late',
+  HOLIDAY: 'bg-holiday',
+  DEFAULT: 'bg-border',
 }
 
 // Malaysia is UTC+8 — always derive today's date in local time, not UTC,
@@ -323,46 +339,40 @@ export default function Scanner({ lang, setLang, t, session }) {
   ).length
 
   return (
-    <div className="fixed inset-0 overflow-hidden" style={{ background: mode === 'camera' ? '#000' : 'var(--bg)' }}>
+    <div className={`fixed inset-0 overflow-hidden ${mode === 'camera' ? 'bg-black' : 'bg-page'}`}>
 
-      <div id="qr-reader-hidden" style={{ position: 'fixed', top: '-9999px', left: '-9999px', width: '100vw', height: '100vh' }} />
-      <div id="camera-container" className="fixed inset-0" style={{ zIndex: mode === 'camera' ? 1 : -1 }} />
+      <div id="qr-reader-hidden" className="fixed -top-[9999px] -left-[9999px] w-screen h-screen" />
+      <div id="camera-container" className={`fixed inset-0 ${mode === 'camera' ? 'z-[1]' : '-z-[1]'}`} />
 
       {/* ── HEADER ── */}
-      <div className="fixed top-0 left-0 right-0 flex items-center justify-between px-5 pt-10 pb-4"
-        style={{
-          zIndex: 20,
-          background: mode === 'camera' ? 'linear-gradient(to bottom, rgba(0,0,0,0.75) 60%, transparent)' : 'var(--surface)',
-          borderBottom: mode === 'manual' ? '0.5px solid var(--border)' : 'none',
-        }}>
+      <div className={`fixed top-0 left-0 right-0 z-20 flex items-center justify-between px-5 pt-10 pb-4 ${
+          mode === 'manual' ? 'bg-surface border-b border-border' : ''
+        }`}
+        style={mode === 'camera' ? { background: 'linear-gradient(to bottom, rgba(0,0,0,0.75) 60%, transparent)' } : undefined}>
         <div className="flex items-center gap-3">
-          <img src={`${import.meta.env.BASE_URL}logo.png`} alt="logo" style={{ width: 34, height: 34, objectFit: 'contain' }} />
+          <img src={`${import.meta.env.BASE_URL}logo.png`} alt="logo" className="w-[34px] h-[34px] object-contain" />
           <div>
-            <div style={{ fontWeight: 500, fontSize: 13, color: mode === 'camera' ? '#fff' : 'var(--text)' }}>Caterpillar Playtime</div>
-            <div style={{ fontSize: 9, color: mode === 'camera' ? '#666' : 'var(--muted)', letterSpacing: '0.1em' }}>ATTENDANCE</div>
+            <div className={`font-medium text-[13px] ${mode === 'camera' ? 'text-white' : 'text-ink'}`}>Caterpillar Playtime</div>
+            <div className={`text-[9px] tracking-widest ${mode === 'camera' ? 'text-[#666]' : 'text-muted'}`}>ATTENDANCE</div>
           </div>
         </div>
-        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-          <div style={{ display: 'flex', background: mode === 'camera' ? 'rgba(0,0,0,0.5)' : 'var(--bg)', borderRadius: 20, overflow: 'hidden', border: `0.5px solid ${mode === 'camera' ? 'rgba(255,255,255,0.15)' : 'var(--border)'}` }}>
+        <div className="flex gap-2 items-center">
+          <div className={`flex rounded-full overflow-hidden border ${
+              mode === 'camera' ? 'bg-black/50 border-white/15' : 'bg-page border-border'
+            }`}>
             <button onClick={() => setMode('camera')}
-              style={{ padding: '5px 12px', fontSize: 11, fontWeight: mode === 'camera' ? 500 : 400, cursor: 'pointer', border: 'none', background: mode === 'camera' ? '#4caf87' : 'transparent', color: mode === 'camera' ? '#fff' : '#666' }}>
+              className={`px-3 py-1.5 text-[11px] cursor-pointer border-0 ${
+                mode === 'camera' ? 'font-medium bg-present text-white' : 'font-normal bg-transparent text-[#666]'
+              }`}>
               📷 Scan
             </button>
             <button onClick={() => setMode('manual')}
-              style={{ padding: '5px 12px', fontSize: 11, fontWeight: mode === 'manual' ? 500 : 400, cursor: 'pointer', border: 'none', background: mode === 'manual' ? '#4caf87' : 'transparent', color: mode === 'manual' ? '#fff' : mode === 'camera' ? '#777' : 'var(--muted)' }}>
+              className={`px-3 py-1.5 text-[11px] cursor-pointer border-0 ${
+                mode === 'manual' ? 'font-medium bg-present text-white' : `font-normal bg-transparent ${mode === 'camera' ? 'text-[#777]' : 'text-muted'}`
+              }`}>
               📋 Manual
             </button>
           </div>
-          {/* {mode === 'camera' && (
-            <div className="flex bg-black/50 backdrop-blur border border-white/10 rounded-full p-1 gap-1">
-              {['en', 'bm'].map(l => (
-                <button key={l} onClick={() => setLang(l)}
-                  className={`font-mono text-[11px] px-3 py-1 rounded-full transition-all ${lang === l ? 'bg-[#00e676] text-black font-semibold' : 'text-[#888]'}`}>
-                  {l.toUpperCase()}
-                </button>
-              ))}
-            </div>
-          )} */}
         </div>
       </div>
 
@@ -371,19 +381,19 @@ export default function Scanner({ lang, setLang, t, session }) {
         <>
           {/* Camera error overlay */}
           {cameraError && (
-            <div className="fixed inset-0 flex items-center justify-center px-8" style={{ zIndex: 25, background: 'rgba(0,0,0,0.85)' }}>
-              <div style={{ background: '#1a1a1a', border: '0.5px solid #ff1744', borderRadius: 16, padding: 24, textAlign: 'center', maxWidth: 320 }}>
-                <div style={{ fontSize: 32, marginBottom: 12 }}>📷</div>
-                <div style={{ fontSize: 14, fontWeight: 500, color: '#ff1744', marginBottom: 8 }}>Camera unavailable</div>
-                <div style={{ fontSize: 12, color: '#888', lineHeight: 1.6 }}>{cameraError}</div>
+            <div className="fixed inset-0 z-25 flex items-center justify-center px-8 bg-black/85">
+              <div className="bg-[#1a1a1a] border border-[#ff1744] rounded-2xl p-6 text-center max-w-[320px]">
+                <div className="text-3xl mb-3">📷</div>
+                <div className="text-sm font-medium text-[#ff1744] mb-2">Camera unavailable</div>
+                <div className="text-xs text-[#888] leading-relaxed">{cameraError}</div>
                 <button onClick={() => setMode('manual')}
-                  style={{ marginTop: 16, background: '#4caf87', color: '#fff', border: 'none', borderRadius: 10, padding: '10px 24px', fontSize: 13, fontWeight: 500, cursor: 'pointer' }}>
+                  className="mt-4 bg-present text-white border-0 rounded-[10px] px-6 py-2.5 text-[13px] font-medium cursor-pointer">
                   Switch to Manual
                 </button>
               </div>
             </div>
           )}
-          <div className="fixed inset-0 pointer-events-none" style={{ zIndex: 10 }}>
+          <div className="fixed inset-0 pointer-events-none z-10">
             {[
               'top-[calc(50%-110px)] left-[calc(50%-110px)] border-t-[3px] border-l-[3px] rounded-tl-lg',
               'top-[calc(50%-110px)] left-[calc(50%+82px)]  border-t-[3px] border-r-[3px] rounded-tr-lg',
@@ -395,18 +405,16 @@ export default function Scanner({ lang, setLang, t, session }) {
           </div>
 
           {!showCard && (
-            <div className="fixed pointer-events-none"
-              style={{ zIndex: 20, top: 'calc(50% + 128px)', left: '50%', transform: 'translateX(-50%)' }}>
+            <div className="fixed pointer-events-none z-20 top-[calc(50%+128px)] left-1/2 -translate-x-1/2">
               <div className="font-mono text-[11px] text-white/50 bg-black/40 backdrop-blur-sm px-4 py-2 rounded-full whitespace-nowrap">
                 {t('hint')}
               </div>
             </div>
           )}
 
-          <div className={`fixed inset-x-4 transition-all duration-300 ${showCard ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
-            style={{ bottom: 'calc(var(--navbar-height) + 60px)', zIndex: 30 }}>
-            <div className={`rounded-2xl border border-white/10 p-5 backdrop-blur-xl ${showCard ? 'slide-up' : ''}`}
-              style={{ background: 'rgba(14,14,14,0.96)' }}>
+          <div className={`fixed inset-x-4 z-30 transition-all duration-300 ${showCard ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
+            style={{ bottom: 'calc(var(--navbar-height) + 60px)' }}>
+            <div className={`rounded-2xl border border-white/10 p-5 backdrop-blur-xl bg-[rgba(14,14,14,0.96)] ${showCard ? 'slide-up' : ''}`}>
               <div className="flex items-center gap-4">
                 <div className="w-12 h-12 rounded-xl flex items-center justify-center text-2xl" style={{ background: cfg.bg }}>
                   {cfg.icon}
@@ -428,22 +436,24 @@ export default function Scanner({ lang, setLang, t, session }) {
 
       {/* ── MANUAL MODE UI ── */}
       {mode === 'manual' && (
-        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, display: 'flex', flexDirection: 'column', paddingTop: 90 }}>
-         <div style={{ padding: '8px 14px', background: 'var(--surface)', borderBottom: '0.5px solid var(--border)', display: 'flex', flexDirection: 'column', gap: 8 }}>
+        <div className="fixed inset-0 flex flex-col pt-[90px]">
+         <div className="px-3.5 py-2 bg-surface border-b border-border flex flex-col gap-2">
           {/* Branch filter — admin only */}
           {session?.role === 'admin' && (
-            <div style={{ display: 'flex', gap: 8 }}>
+            <div className="flex gap-2">
               <select value={filterBranch} onChange={e => setFilterBranch(e.target.value)}
-                style={{ flex: 1, background: 'var(--bg)', border: '0.5px solid var(--border)', borderRadius: 10, padding: '9px 12px', fontSize: 13, color: 'var(--text)', outline: 'none' }}>
+                className="flex-1 bg-page border border-border rounded-[10px] px-3 py-2 text-[13px] text-ink outline-none">
                 <option value="">All branches</option>
                 {branches.map(b => <option key={b.id} value={b.id}>{b.slug}</option>)}
               </select>
               <button onClick={runNow} disabled={runningNow}
-                style={{ background: runningNow ? 'var(--border)' : 'var(--absent)', color: runningNow ? 'var(--muted)' : '#fff', border: 'none', borderRadius: 10, padding: '9px 14px', fontSize: 12, fontWeight: 500, cursor: runningNow ? 'not-allowed' : 'pointer', whiteSpace: 'nowrap', flexShrink: 0 }}>
+                className={`text-white border-0 rounded-[10px] px-3.5 py-2 text-xs font-medium whitespace-nowrap flex-shrink-0 ${
+                  runningNow ? 'bg-border text-muted cursor-not-allowed' : 'bg-absent cursor-pointer'
+                }`}>
                 {runningNow ? 'Running...' : '🔔 Notify Absent'}
               </button>
               {runResult && (
-                <div style={{ fontSize: 12, color: 'var(--present)', background: 'var(--present-bg)', borderRadius: 8, padding: '6px 12px', marginTop: 4 }}>
+                <div className="text-xs text-present bg-present-bg rounded-lg px-3 py-1.5 mt-1">
                   {runResult}
                 </div>
               )}
@@ -455,13 +465,13 @@ export default function Scanner({ lang, setLang, t, session }) {
             value={manualSearch}
             onChange={e => setManualSearch(e.target.value)}
             placeholder="Search name or ID..."
-            style={{ width: '100%', background: 'var(--bg)', border: '0.5px solid var(--border)', borderRadius: 10, padding: '10px 14px', fontSize: 14, color: 'var(--text)', outline: 'none', boxSizing: 'border-box' }}
+            className="w-full box-border bg-page border border-border rounded-[10px] px-3.5 py-2.5 text-sm text-ink outline-none"
           />
         </div>
 
-          <div style={{ flex: 1, overflowY: 'auto', padding: '10px 14px', paddingBottom: 'calc(var(--navbar-height) + 70px)', display: 'flex', flexDirection: 'column', gap: 6 }}>
+          <div className="flex-1 overflow-y-auto px-3.5 py-2.5 flex flex-col gap-1.5" style={{ paddingBottom: 'calc(var(--navbar-height) + 70px)' }}>
             {filteredManual.length === 0 ? (
-              <div style={{ textAlign: 'center', color: 'var(--muted)', fontSize: 13, padding: 40 }}>No students found</div>
+              <div className="text-center text-muted text-[13px] p-10">No students found</div>
             ) : filteredManual.map(s => {
               const status    = todayAttendance[s.id]
               const isPresent = status === 'PRESENT'
@@ -469,60 +479,50 @@ export default function Scanner({ lang, setLang, t, session }) {
               const isHoliday = status === 'HOLIDAY'
               const isAbsent  = status === 'ABSENT'
               const isLoading = marking === s.id || marking === s.id + '_late'
+              const rowCls    = ROW_CLASSES[status] || ROW_CLASSES.DEFAULT
+              const avatarCls = AVATAR_CLASSES[status] || AVATAR_CLASSES.DEFAULT
 
               return (
-                <div key={s.id} style={{
-                  display: 'flex', alignItems: 'center', gap: 10,
-                  padding: '9px 12px', borderRadius: 12,
-                  background: isPresent ? '#edf7f2' : isLate ? '#fffbe6' : isAbsent ? 'var(--absent-bg)' : isHoliday ? 'var(--holiday-bg)' : 'var(--surface)',
-                  border: `0.5px solid ${isPresent ? '#4caf87' : isLate ? '#f0a500' : isAbsent ? 'var(--absent)' : isHoliday ? 'var(--holiday)' : 'var(--border)'}`,
-                  opacity: isLoading ? 0.6 : 1,
-                  transition: 'all 0.2s',
-                }}>
-                  <div style={{
-                    width: 34, height: 34, borderRadius: '50%', flexShrink: 0,
-                    background: isPresent ? '#4caf87' : isLate ? '#f0a500' : isHoliday ? 'var(--holiday)' : 'var(--border)',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    fontSize: isPresent || isLate ? 14 : 13, fontWeight: 500, color: '#fff',
-                  }}>
+                <div key={s.id} className={`flex items-center gap-2.5 px-3 py-2.5 rounded-xl border transition-all duration-200 ${rowCls} ${isLoading ? 'opacity-60' : 'opacity-100'}`}>
+                  <div className={`w-[34px] h-[34px] rounded-full flex-shrink-0 flex items-center justify-center font-medium text-white ${avatarCls} ${isPresent || isLate ? 'text-sm' : 'text-[13px]'}`}>
                     {isPresent ? '✓' : isLate ? '⏰' : isHoliday ? '🏖' : s.name.charAt(0)}
                   </div>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: 13, fontWeight: 500, color: 'var(--text)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{s.name}</div>
-                    <div style={{ fontSize: 10, color: 'var(--muted)' }}>{s.student_no} · {s.branches?.name?.replace('Caterpillar Playtime ', '')}</div>
+                  <div className="flex-1 min-w-0">
+                    <div className="text-[13px] font-medium text-ink whitespace-nowrap overflow-hidden text-ellipsis">{s.name}</div>
+                    <div className="text-[10px] text-muted">{s.student_no} · {cleanBranchName(s.branches?.name)}</div>
                   </div>
                   {isHoliday ? (
-                    <span style={{ fontSize: 10, color: 'var(--holiday)', padding: '3px 8px', background: 'var(--holiday-bg)', borderRadius: 6, border: '0.5px solid var(--holiday)' }}>Holiday</span>
+                    <span className="text-[10px] text-holiday px-2 py-1 bg-holiday-bg rounded-md border border-holiday">Holiday</span>
                   ) : isPresent ? (
-                    <div style={{ display: 'flex', gap: 5, flexShrink: 0 }}>
+                    <div className="flex gap-1.5 flex-shrink-0">
                       <button onClick={() => markLate(s)} disabled={!!marking}
-                        style={{ background: '#d4ede2', color: '#2d7a4f', border: '0.5px solid #4caf87', borderRadius: 8, padding: '5px 11px', fontSize: 11, fontWeight: 500, cursor: 'pointer', opacity: marking ? 0.5 : 1 }}>
+                        className="bg-present-bg text-present border border-present rounded-lg px-2.5 py-1 text-[11px] font-medium cursor-pointer disabled:opacity-50">
                         {marking === s.id + '_late' ? '...' : '✓ Present'}
                       </button>
                       <button onClick={() => markAbsent(s)} disabled={!!marking}
-                        style={{ background: 'var(--absent-bg)', color: 'var(--absent)', border: '0.5px solid var(--absent)', borderRadius: 8, padding: '5px 8px', fontSize: 10, fontWeight: 500, cursor: 'pointer', opacity: marking ? 0.5 : 1 }}>
+                        className="bg-absent-bg text-absent border border-absent rounded-lg px-2 py-1 text-[10px] font-medium cursor-pointer disabled:opacity-50">
                         {marking === s.id + '_absent' ? '...' : 'Absent'}
                       </button>
                     </div>
                   ) : isLate ? (
-                    <div style={{ display: 'flex', gap: 5, flexShrink: 0 }}>
+                    <div className="flex gap-1.5 flex-shrink-0">
                       <button onClick={() => markAttendance(s)} disabled={!!marking}
-                        style={{ background: '#fff0b3', color: '#8a6000', border: '0.5px solid #e8c840', borderRadius: 8, padding: '5px 11px', fontSize: 11, fontWeight: 500, cursor: 'pointer', opacity: marking ? 0.5 : 1 }}>
+                        className="bg-late-bg text-late border border-late rounded-lg px-2.5 py-1 text-[11px] font-medium cursor-pointer disabled:opacity-50">
                         {marking === s.id ? '...' : '⏰ Late'}
                       </button>
                       <button onClick={() => markAbsent(s)} disabled={!!marking}
-                        style={{ background: 'var(--absent-bg)', color: 'var(--absent)', border: '0.5px solid var(--absent)', borderRadius: 8, padding: '5px 8px', fontSize: 10, fontWeight: 500, cursor: 'pointer', opacity: marking ? 0.5 : 1 }}>
+                        className="bg-absent-bg text-absent border border-absent rounded-lg px-2 py-1 text-[10px] font-medium cursor-pointer disabled:opacity-50">
                         {marking === s.id + '_absent' ? '...' : 'Absent'}
                       </button>
                     </div>
                   ) : (
-                    <div style={{ display: 'flex', gap: 5, flexShrink: 0 }}>
+                    <div className="flex gap-1.5 flex-shrink-0">
                       <button onClick={() => markAttendance(s)} disabled={!!marking}
-                        style={{ background: '#4caf87', color: '#fff', border: 'none', borderRadius: 7, padding: '6px 11px', fontSize: 11, fontWeight: 500, cursor: 'pointer', opacity: marking ? 0.5 : 1 }}>
+                        className="bg-present text-white border-0 rounded-[7px] px-2.5 py-1.5 text-[11px] font-medium cursor-pointer disabled:opacity-50">
                         {marking === s.id ? '...' : 'In'}
                       </button>
                       <button onClick={() => markLate(s)} disabled={!!marking}
-                        style={{ background: '#fff8e0', color: '#8a6000', border: '0.5px solid #e8c840', borderRadius: 7, padding: '6px 11px', fontSize: 11, fontWeight: 500, cursor: 'pointer', opacity: marking ? 0.5 : 1 }}>
+                        className="bg-late-bg text-late border border-late rounded-[7px] px-2.5 py-1.5 text-[11px] font-medium cursor-pointer disabled:opacity-50">
                         {marking === s.id + '_late' ? '...' : 'Late'}
                       </button>
                     </div>
@@ -535,11 +535,12 @@ export default function Scanner({ lang, setLang, t, session }) {
       )}
 
       {/* ── COUNTER BAR ── */}
-      <div className="fixed left-0 right-0 flex justify-center pb-5 pt-4"
+      <div className={`fixed left-0 right-0 z-20 flex justify-center pb-5 pt-4 ${
+          mode === 'manual' ? 'bg-surface border-t border-border' : ''
+        }`}
         style={{
-          bottom: 'var(--navbar-height)', zIndex: 20, gap: mode === 'manual' ? '8vw' : '10vw',
-          background: mode === 'camera' ? 'linear-gradient(to top, rgba(0,0,0,0.85) 60%, transparent)' : 'var(--surface)',
-          borderTop: mode === 'manual' ? '0.5px solid var(--border)' : 'none',
+          bottom: 'var(--navbar-height)', gap: mode === 'manual' ? '8vw' : '10vw',
+          background: mode === 'camera' ? 'linear-gradient(to top, rgba(0,0,0,0.85) 60%, transparent)' : undefined,
         }}>
         {mode === 'camera' ? (
           <>
@@ -557,8 +558,8 @@ export default function Scanner({ lang, setLang, t, session }) {
         ) : (
           <>
             {[
-              { key: 'present', color: '#4caf87',        val: counts.present, label: 'Present' },
-              { key: 'late',    color: '#f0a500',        val: counts.late,    label: 'Late' },
+              { key: 'present', color: 'var(--present)',        val: counts.present, label: 'Present' },
+              { key: 'late',    color: 'var(--late)',        val: counts.late,    label: 'Late' },
               { key: 'absent',  color: 'var(--absent)',  val: absentCount,    label: 'Absent' },
             ].map(c => (
               <div key={c.key} className="text-center">
@@ -569,8 +570,6 @@ export default function Scanner({ lang, setLang, t, session }) {
           </>
         )}
       </div>
-
-      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
     </div>
   )
 }

@@ -8,18 +8,33 @@ export default {
         mono: ['DM Mono', 'monospace'],
       },
       colors: {
-        brand: {
-          green:  '#00e676',
-          yellow: '#ffd600',
-          red:    '#ff1744',
-          blue:   '#2979ff',
-          purple: '#818cf8',
-          pink:   '#f472b6',
-        },
-        surface: {
-          DEFAULT: '#141414',
-          2: '#1a1a1a',
-          3: '#242424',
+        // Maps directly onto the CSS custom properties in src/index.css —
+        // class names match the --var names 1:1 so there's no separate
+        // mapping to remember (bg-primary == var(--primary), etc).
+        primary:        'var(--primary)',
+        'primary-hover': 'var(--primary-hover)',
+        'primary-bg':   'var(--primary-bg)',
+        accent:         'var(--accent)',
+        'accent-hover': 'var(--accent-hover)',
+        'accent-bg':    'var(--accent-bg)',
+        present:        'var(--present)',
+        'present-bg':   'var(--present-bg)',
+        late:           'var(--late)',
+        'late-bg':      'var(--late-bg)',
+        absent:         'var(--absent)',
+        'absent-bg':    'var(--absent-bg)',
+        holiday:        'var(--holiday)',
+        'holiday-bg':   'var(--holiday-bg)',
+        surface:        'var(--surface)',
+        muted:          'var(--muted)',
+        hint:           'var(--hint)',
+        // "bg"/"text" collide with Tailwind's own utility prefixes, so the
+        // page background and default text color use these names instead.
+        page:           'var(--bg)',
+        ink:            'var(--text)',
+        border: {
+          DEFAULT: 'var(--border)',
+          strong:  'var(--border-strong)',
         },
       },
     },

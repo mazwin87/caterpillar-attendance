@@ -1,20 +1,9 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { getBranches, supabase } from '../lib/supabase'
-import { useEffect } from 'react'
+import { STATUS_CLASSES } from '../lib/constants'
+import { cleanBranchName } from '../lib/branch'
 
-const STATUS_COLORS = {
-  PRESENT: 'var(--present)',
-  LATE:    'var(--late)',
-  ABSENT:  'var(--absent)',
-  HOLIDAY: 'var(--holiday)',
-}
-
-const STATUS_BG = {
-  PRESENT: 'var(--present-bg)',
-  LATE:    'var(--late-bg)',
-  ABSENT:  'var(--absent-bg)',
-  HOLIDAY: 'var(--holiday-bg)',
-}
+const inputClass = "bg-page border border-border rounded-[10px] px-3.5 py-2.5 text-[13px] text-ink outline-none w-full"
 
 export default function Reports({ t }) {
   const today = new Date().toISOString().split('T')[0]
@@ -23,7 +12,7 @@ export default function Reports({ t }) {
   const [branches, setBranches]     = useState([])
   const [records, setRecords]       = useState([])
   const [loading, setLoading]       = useState(false)
-  const [filterBranch, setFilter]   = useState('')
+  const [filterBranch, setFilterBranch]   = useState('')
   const [startDate, setStartDate]   = useState(weekAgo)
   const [endDate, setEndDate]       = useState(today)
   const [searched, setSearched]     = useState(false)
@@ -59,7 +48,7 @@ export default function Reports({ t }) {
       r.date,
       r.students?.name || '',
       r.students?.student_no || '',
-      r.students?.branches?.name?.replace('Caterpillar_', '') || '',
+      cleanBranchName(r.students?.branches?.name) || '',
       r.students?.classes?.name || '',
       r.status,
       r.absence_reason?.replace('_', ' ') || '',
@@ -121,7 +110,7 @@ export default function Reports({ t }) {
                 <td>${r.date}</td>
                 <td>${r.students?.name || ''}</td>
                 <td>${r.students?.student_no || ''}</td>
-                <td>${r.students?.branches?.name?.replace('Caterpillar_', '') || ''}</td>
+                <td>${cleanBranchName(r.students?.branches?.name) || ''}</td>
                 <td>${r.students?.classes?.name || ''}</td>
                 <td class="${r.status}">${r.status}</td>
                 <td>${r.absence_reason?.replace('_', ' ') || ''}</td>
@@ -140,7 +129,6 @@ export default function Reports({ t }) {
     win.print()
   }
 
-  // Group records by date for display
   const grouped = records.reduce((acc, r) => {
     const date = r.date
     if (!acc[date]) acc[date] = []
@@ -148,69 +136,60 @@ export default function Reports({ t }) {
     return acc
   }, {})
 
-  const inp = {
-    style: {
-      background: 'var(--bg)', border: '0.5px solid var(--border)',
-      borderRadius: 10, padding: '10px 14px', fontSize: 13,
-      color: 'var(--text)', outline: 'none',
-    }
-  }
-  
   return (
-    <div style={{ minHeight: '100%', background: 'var(--bg)', paddingBottom: 80 }}>
+    <div className="min-h-full bg-page pb-20">
 
       {/* Header */}
-      <div style={{ background: 'var(--surface)', borderBottom: '0.5px solid var(--border)', padding: '52px 20px 16px' }}>
-        <div style={{ fontSize: 22, fontWeight: 500, color: 'var(--text)', marginBottom: 14 }}>Reports</div>
+      <div className="pt-[52px] lg:pt-8 bg-surface border-b border-border pb-4 px-5">
+       <div className="lg:max-w-5xl lg:mx-auto">
+        <div className="text-[22px] font-medium text-ink mb-3.5">Reports</div>
 
         {/* Filters */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
-            <div>
-              <div style={{ fontSize: 11, color: 'var(--muted)', marginBottom: 4 }}>From</div>
-              <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} {...inp} style={{ ...inp.style, width: '100%' }} />
+        <div className="flex flex-col lg:flex-row lg:items-end gap-2">
+          <div className="grid grid-cols-2 lg:flex lg:flex-1 gap-2">
+            <div className="lg:max-w-[180px]">
+              <div className="text-[11px] text-muted mb-1">From</div>
+              <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} className={inputClass} />
             </div>
-            <div>
-              <div style={{ fontSize: 11, color: 'var(--muted)', marginBottom: 4 }}>To</div>
-              <input type="date" value={endDate} onChange={e => setEndDate(e.target.value)} {...inp} style={{ ...inp.style, width: '100%' }} />
+            <div className="lg:max-w-[180px]">
+              <div className="text-[11px] text-muted mb-1">To</div>
+              <input type="date" value={endDate} onChange={e => setEndDate(e.target.value)} className={inputClass} />
             </div>
           </div>
 
-          <select value={filterBranch} onChange={e => setFilter(e.target.value)} {...inp} style={{ ...inp.style, width: '100%' }}>
+          <select value={filterBranch} onChange={e => setFilterBranch(e.target.value)} className={`lg:max-w-xs ${inputClass}`}>
             <option value="">All branches</option>
             {branches.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
           </select>
 
           <button onClick={fetchRecords} disabled={loading}
-            style={{ background: 'var(--present)', color: '#fff', border: 'none', borderRadius: 10, padding: '11px', fontSize: 14, fontWeight: 500, cursor: 'pointer', opacity: loading ? 0.6 : 1 }}>
+            className="lg:flex-shrink-0 lg:px-8 bg-present text-white border-0 rounded-[10px] py-2.5 text-sm font-medium cursor-pointer disabled:opacity-60">
             {loading ? 'Loading...' : 'Search'}
           </button>
         </div>
+       </div>
       </div>
 
       {/* Results */}
-      <div style={{ padding: '12px 16px' }}>
+      <div className="lg:max-w-5xl lg:mx-auto p-4">
 
-        {/* Summary + Export */}
         {searched && !loading && (
           <>
-            {/* Export buttons */}
             {records.length > 0 && (
-              <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
+              <div className="flex gap-2 mb-3">
                 <button onClick={exportCSV}
-                  style={{ flex: 1, background: 'var(--surface)', border: '0.5px solid var(--border)', borderRadius: 10, padding: '10px', fontSize: 13, color: 'var(--text)', cursor: 'pointer', fontWeight: 500 }}>
+                  className="flex-1 bg-surface border border-border rounded-[10px] py-2.5 text-[13px] text-ink cursor-pointer font-medium">
                   📥 Export CSV
                 </button>
                 <button onClick={exportPDF}
-                  style={{ flex: 1, background: 'var(--surface)', border: '0.5px solid var(--border)', borderRadius: 10, padding: '10px', fontSize: 13, color: 'var(--text)', cursor: 'pointer', fontWeight: 500 }}>
+                  className="flex-1 bg-surface border border-border rounded-[10px] py-2.5 text-[13px] text-ink cursor-pointer font-medium">
                   🖨️ Export PDF
                 </button>
               </div>
             )}
 
-            {/* No results */}
             {records.length === 0 && (
-              <div style={{ textAlign: 'center', color: 'var(--muted)', fontSize: 13, padding: 48 }}>
+              <div className="text-center text-muted text-[13px] p-12">
                 No records found for this period
               </div>
             )}
@@ -219,59 +198,52 @@ export default function Reports({ t }) {
 
         {/* Records grouped by date */}
         {Object.entries(grouped).map(([date, dayRecords]) => (
-          <div key={date} style={{ marginBottom: 12 }}>
-            {/* Date header */}
-            <div style={{ fontSize: 11, color: 'var(--muted)', letterSpacing: '0.06em', textTransform: 'uppercase', padding: '8px 0 6px', fontWeight: 500 }}>
+          <div key={date} className="mb-3">
+            <div className="text-[11px] text-muted tracking-wider uppercase py-2 font-medium">
               {new Date(date).toLocaleDateString('en-MY', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
-              <span style={{ marginLeft: 8, color: 'var(--hint)', fontWeight: 400 }}>{dayRecords.length} records</span>
+              <span className="ml-2 text-hint font-normal">{dayRecords.length} records</span>
             </div>
 
-            {/* Records for that date */}
-            <div style={{ background: 'var(--surface)', border: '0.5px solid var(--border)', borderRadius: 12, overflow: 'hidden' }}>
-              {dayRecords.map((r, i) => (
-                <div key={r.id} style={{
-                  display: 'flex', alignItems: 'center', gap: 12,
-                  padding: '10px 14px',
-                  borderBottom: i < dayRecords.length - 1 ? '0.5px solid var(--border)' : 'none'
-                }}>
-                  {/* Avatar */}
-                  <div style={{ width: 30, height: 30, borderRadius: '50%', background: STATUS_BG[r.status], display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 500, color: STATUS_COLORS[r.status], flexShrink: 0 }}>
+            <div className="bg-surface border border-border rounded-xl overflow-hidden">
+              {dayRecords.map((r, i) => {
+                const cls = STATUS_CLASSES[r.status]
+                return (
+                <div key={r.id}
+                  className={`flex items-center gap-3 px-3.5 py-2.5 ${i < dayRecords.length - 1 ? 'border-b border-border' : ''}`}>
+                  <div className={`w-[30px] h-[30px] rounded-full flex items-center justify-center text-xs font-medium flex-shrink-0 ${cls.bg} ${cls.text}`}>
                     {r.students?.name?.charAt(0)}
                   </div>
 
-                  {/* Name + branch */}
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: 13, fontWeight: 500, color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{r.students?.name}</div>
-                    <div style={{ fontSize: 10, color: 'var(--muted)', marginTop: 1 }}>
-                      {r.students?.student_no} · {r.students?.branches?.name?.replace('Caterpillar_', '')}
+                  <div className="flex-1 min-w-0">
+                    <div className="text-[13px] font-medium text-ink overflow-hidden text-ellipsis whitespace-nowrap">{r.students?.name}</div>
+                    <div className="text-[10px] text-muted mt-0.5">
+                      {r.students?.student_no} · {cleanBranchName(r.students?.branches?.name)}
                       {r.students?.classes?.name ? ` · ${r.students.classes.name}` : ''}
                     </div>
                   </div>
 
-                  {/* Status + reason + time */}
-                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 3, flexShrink: 0 }}>
-                    <span style={{ fontSize: 10, padding: '2px 8px', borderRadius: 20, background: STATUS_BG[r.status], color: STATUS_COLORS[r.status], fontWeight: 500 }}>
+                  <div className="flex flex-col items-end gap-0.5 flex-shrink-0">
+                    <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${cls.bg} ${cls.text}`}>
                       {r.status}
                     </span>
                     {r.absence_reason && (
-                      <span style={{ fontSize: 9, color: 'var(--absent)', textTransform: 'capitalize' }}>
+                      <span className="text-[9px] text-absent capitalize">
                         {r.absence_reason.replace('_', ' ')}
                       </span>
                     )}
                     {r.scanned_at && (
-                      <span style={{ fontSize: 9, color: 'var(--muted)' }}>
+                      <span className="text-[9px] text-muted">
                         {new Date(r.scanned_at).toLocaleTimeString('en-MY', { hour: '2-digit', minute: '2-digit' })}
                       </span>
                     )}
                   </div>
                 </div>
-              ))}
+                )
+              })}
             </div>
           </div>
         ))}
       </div>
-
-      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
     </div>
   )
 }

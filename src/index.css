@@ -27,20 +27,39 @@
 }
 .slide-up { animation: slideUp 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); }
 
+@keyframes spin { to { transform: rotate(360deg); } }
+
 :root {
-  --bg: #f8f8f6;
+  /* Core surfaces */
+  --bg: #f8f7f2;
   --surface: #ffffff;
-  --border: #e8e8e4;
-  --text: #1a1a1a;
-  --muted: #888888;
-  --hint: #aaaaaa;
+  --border: #e7e4da;
+  --border-strong: #d8d4c6;
+  --text: #23291f;
+  --muted: #71766a;
+  --hint: #9a9d8f;
   --nav-bg: #ffffff;
-  --present: #2d7a4f;
-  --late: #9a6b1a;
-  --absent: #b03030;
-  --holiday: #4a6fa5;
-  --present-bg: #eef6f1;
-  --late-bg: #fdf4e7;
-  --absent-bg: #fdeaea;
-  --holiday-bg: #edf1f8;
+
+  /* Brand */
+  --primary: #0f6e56;
+  --primary-hover: #0c5945;
+  --primary-bg: #e1f5ee;
+  --accent: #d85a30;
+  --accent-hover: #b8461f;
+  --accent-bg: #faece7;
+  --accent-text: #8a3418;
+
+  /* Layout */
+  --sidebar-width: 232px;
+  --sidebar-width-collapsed: 76px;
+
+  /* Attendance status */
+  --present: #0f6e56;
+  --late: #a06515;
+  --absent: #b0392a;
+  --holiday: #3d6fa5;
+  --present-bg: #e1f5ee;
+  --late-bg: #fbf0da;
+  --absent-bg: #fbeae6;
+  --holiday-bg: #e9f0f8;
 }

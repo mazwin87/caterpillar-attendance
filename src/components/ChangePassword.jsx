@@ -2,25 +2,13 @@ import { useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { updateSession } from '../lib/auth'
 
+const inputClass = "w-full box-border bg-page border border-border rounded-[10px] px-4 py-3.5 text-[15px] text-ink outline-none"
+
 export default function ChangePassword({ session, onDone }) {
   const [newPass,     setNewPass]     = useState('')
   const [confirmPass, setConfirmPass] = useState('')
   const [loading,     setLoading]     = useState(false)
   const [error,       setError]       = useState('')
-
-  const inp = {
-    style: {
-      width: '100%',
-      background: 'var(--bg)',
-      border: '0.5px solid var(--border)',
-      borderRadius: 10,
-      padding: '13px 16px',
-      fontSize: 15,
-      color: 'var(--text)',
-      outline: 'none',
-      boxSizing: 'border-box',
-    }
-  }
 
   async function handleSubmit(e) {
     e.preventDefault()
@@ -45,24 +33,24 @@ export default function ChangePassword({ session, onDone }) {
   }
 
   return (
-    <div style={{ minHeight: '100vh', background: 'var(--bg)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
-      <div style={{ width: '100%', maxWidth: 360 }}>
+    <div className="min-h-screen bg-page flex items-center justify-center p-6">
+      <div className="w-full max-w-[360px]">
 
-        <div style={{ textAlign: 'center', marginBottom: 36 }}>
-          <img src={`${import.meta.env.BASE_URL}logo.png`} alt="Caterpillar Playtime" style={{ width: 100, height: 100, objectFit: 'contain', margin: '0 auto 16px', display: 'block' }} />
-          <div style={{ fontSize: 22, fontWeight: 500, color: 'var(--text)' }}>Change Password</div>
-          <div style={{ fontSize: 13, color: 'var(--muted)', marginTop: 4 }}>You must set a new password before continuing.</div>
+        <div className="text-center mb-9">
+          <img src={`${import.meta.env.BASE_URL}logo.png`} alt="Caterpillar Playtime" className="w-[100px] h-[100px] object-contain mx-auto mb-4 block" />
+          <div className="text-[22px] font-medium text-ink">Change Password</div>
+          <div className="text-[13px] text-muted mt-1">You must set a new password before continuing.</div>
         </div>
 
-        <div style={{ background: 'var(--surface)', border: '0.5px solid var(--border)', borderRadius: 16, padding: 24 }}>
-          <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+        <div className="bg-surface border border-border rounded-2xl p-6">
+          <form onSubmit={handleSubmit} className="flex flex-col gap-3">
             <input
               required
               type="password"
               value={newPass}
               onChange={e => setNewPass(e.target.value)}
               placeholder="New password"
-              {...inp}
+              className={inputClass}
             />
             <input
               required
@@ -70,11 +58,11 @@ export default function ChangePassword({ session, onDone }) {
               value={confirmPass}
               onChange={e => setConfirmPass(e.target.value)}
               placeholder="Confirm new password"
-              {...inp}
+              className={inputClass}
             />
 
             {error && (
-              <div style={{ background: 'var(--absent-bg)', border: '0.5px solid var(--absent)', borderRadius: 8, padding: '10px 14px', fontSize: 13, color: 'var(--absent)' }}>
+              <div className="bg-absent-bg border border-absent rounded-lg px-3.5 py-2.5 text-[13px] text-absent">
                 {error}
               </div>
             )}
@@ -82,7 +70,7 @@ export default function ChangePassword({ session, onDone }) {
             <button
               type="submit"
               disabled={loading}
-              style={{ background: 'var(--present)', color: '#fff', border: 'none', borderRadius: 10, padding: 14, fontSize: 15, fontWeight: 500, cursor: 'pointer', marginTop: 4, opacity: loading ? 0.7 : 1 }}>
+              className="bg-primary text-white border-0 rounded-[10px] py-3.5 text-[15px] font-medium cursor-pointer mt-1 disabled:opacity-70">
               {loading ? 'Saving...' : 'Set New Password'}
             </button>
           </form>
