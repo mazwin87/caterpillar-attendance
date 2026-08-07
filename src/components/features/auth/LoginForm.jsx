@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { setSession } from '../../../lib/auth'
-import { loginWithCredentials, getUserRole } from '../../../lib/services/users.service'
+import { loginWithCredentials } from '../../../lib/services/users.service'
 import { Input, Button } from '../../ui'
 
 const FIELD = { style: { fontSize: 15, padding: '13px 16px' } }
@@ -11,32 +11,33 @@ export default function LoginForm({ onLogin }) {
   const [teacherName, setTeacherName] = useState('')
   const [loading, setLoading]         = useState(false)
   const [error, setError]             = useState('')
-  const [isTeacher, setIsTeacher]     = useState(false)
+  const [pendingUser, setPendingUser] = useState(null)
 
-  async function handleLogin(e) {
+  async function handleSubmit(e) {
     e.preventDefault()
-    setLoading(true)
     setError('')
+
+    if (pendingUser) {
+      if (!teacherName.trim()) { setError('Please enter your name.'); return }
+      setSession(pendingUser, teacherName.trim())
+      onLogin(pendingUser, teacherName.trim())
+      return
+    }
+
+    setLoading(true)
     try {
       const user = await loginWithCredentials(username, password)
-      if (user.role === 'teacher' && !teacherName.trim()) {
-        setError('Please enter your name.')
-        return
+      if (user.role === 'teacher') {
+        setPendingUser(user)
+      } else {
+        setSession(user, '')
+        onLogin(user, '')
       }
-      setSession(user, teacherName.trim())
-      onLogin(user, teacherName.trim())
     } catch (err) {
       setError(err.message)
     } finally {
       setLoading(false)
     }
-  }
-
-  async function handleUsernameChange(val) {
-    setUsername(val)
-    if (val.length < 2) { setIsTeacher(false); return }
-    const role = await getUserRole(val)
-    setIsTeacher(role === 'teacher')
   }
 
   return (
@@ -50,36 +51,41 @@ export default function LoginForm({ onLogin }) {
         </div>
 
         <div style={{ background: 'var(--surface)', border: '0.5px solid var(--border)', borderRadius: 16, padding: 24 }}>
-          <form onSubmit={handleLogin} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-            <Input
-              required
-              value={username}
-              onChange={e => handleUsernameChange(e.target.value)}
-              placeholder="Username"
-              autoCapitalize="none"
-              autoCorrect="off"
-              style={FIELD.style}
-            />
-
-            <Input
-              required
-              type="password"
-              value={password}
-              onChange={e => setPassword(e.target.value)}
-              placeholder="Password"
-              style={FIELD.style}
-            />
-
-            {isTeacher && (
-              <div style={{ animation: 'slideDown 0.2s ease' }}>
+          <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            {!pendingUser ? (
+              <>
                 <Input
                   required
+                  value={username}
+                  onChange={e => setUsername(e.target.value)}
+                  placeholder="Username"
+                  autoCapitalize="none"
+                  autoCorrect="off"
+                  style={FIELD.style}
+                />
+                <Input
+                  required
+                  type="password"
+                  value={password}
+                  onChange={e => setPassword(e.target.value)}
+                  placeholder="Password"
+                  style={FIELD.style}
+                />
+              </>
+            ) : (
+              <>
+                <div style={{ fontSize: 13, color: 'var(--muted)', textAlign: 'center', paddingBottom: 4 }}>
+                  Logged in as <strong>{username}</strong>. Enter your display name.
+                </div>
+                <Input
+                  required
+                  autoFocus
                   value={teacherName}
                   onChange={e => setTeacherName(e.target.value)}
                   placeholder="Your name e.g. Cikgu Siti"
                   style={FIELD.style}
                 />
-              </div>
+              </>
             )}
 
             {error && (
@@ -89,7 +95,7 @@ export default function LoginForm({ onLogin }) {
             )}
 
             <Button type="submit" disabled={loading} style={{ padding: 14, fontSize: 15, marginTop: 4 }}>
-              {loading ? 'Signing in...' : 'Sign in'}
+              {loading ? 'Signing in...' : pendingUser ? 'Continue' : 'Sign in'}
             </Button>
           </form>
         </div>

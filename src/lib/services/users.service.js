@@ -22,15 +22,6 @@ export async function loginWithCredentials(username, password) {
   }
 }
 
-export async function getUserRole(username) {
-  const { data } = await supabase
-    .from('app_users')
-    .select('role')
-    .eq('username', username.toLowerCase().trim())
-    .single()
-  return data?.role || null
-}
-
 export async function adminResetPassword(userId, newPassword) {
   const { error } = await supabase.functions.invoke('admin-reset-password', {
     body: { target_user_id: userId, new_password: newPassword },

@@ -1,73 +1,116 @@
 # Known Limitations
 
-Security and design limitations that are recorded but not yet resolved.
+Security and design limitations recorded but not yet resolved.
 Each entry notes the finding ID from `db-audit.md`, the nature of the limitation, and the proper long-term fix.
 
 ---
 
-## Security
+## RESOLVED (2026-08-07 — Supabase Auth migration)
 
-### NULL-CALLER CLASS — PL/pgSQL `NOT IN` fails open when role is NULL
+### C3 / M1 — Branch isolation now enforced at DB level
 
-Any SECURITY DEFINER RPC that does `IF v_role NOT IN ('admin', 'superadmin')` without an explicit `IS NULL` check fails open when the caller's UUID is null or not found in `app_users`. `NULL NOT IN (...)` evaluates to `UNKNOWN` in SQL; PL/pgSQL treats `IF UNKNOWN` as `FALSE`; the `RAISE EXCEPTION` is skipped; the function proceeds.
+All eight public tables (`students`, `attendance`, `parents`, `holidays`, `events`,
+`school_calendar`, `payments`, `app_users`) now have branch-scoped RLS using
+`is_super_admin() OR branch_id = ANY(get_my_branch_ids())` (or an EXISTS subquery
+for `parents`, which has no direct `branch_id`). The anon key returns `[]` on all
+tables — confirmed via curl post-cleanup.
 
-**Full RPC audit (2026-08-06):**
+### H1-SOFT / H4 — Caller-asserted UUID in auth paths eliminated
 
-| RPC | Null-caller result |
-|---|---|
-| `verify_login(text, text)` | FAIL-CLOSED — `NOT FOUND` pattern, no bypass |
-| `change_own_password(uuid, text, text)` | FAIL-CLOSED — `NOT FOUND` pattern |
-| `run_daily_absent_marking(uuid)` | was FAIL-OPEN, patched with `IS NULL OR NOT IN` |
-| `reset_user_password(uuid, uuid, text, bool)` | was FAIL-OPEN, patched with `IS NULL OR NOT IN` |
-| `get_payments(uuid)` | FAIL-CLOSED — built with `IS NULL OR NOT IN` from the start |
-| `create_payment(uuid,...)` | FAIL-CLOSED — built with `IS NULL OR NOT IN` from the start |
-| `record_scan(uuid)` | N/A — no privilege guard |
-| `get_receipt_by_id(uuid)` | N/A — intentionally public |
+Login now uses `supabase.auth.signInWithPassword`; `auth.uid()` is set server-side
+and cannot be spoofed. Password change uses `supabase.auth.updateUser` +
+`clear_my_must_change_password()` SECURITY DEFINER RPC. Admin password reset uses
+an Edge Function that verifies the caller's JWT via `admin.auth.getUser(jwt)` before
+touching any user record. The `anon_read_app_users` policy that exposed admin UUIDs
+to anonymous callers is also dropped.
 
-**Rule for all future RPCs with privilege guards:**
-```sql
--- Always write:
-IF v_role IS NULL OR v_role NOT IN ('admin', 'superadmin') THEN
-  RAISE EXCEPTION 'Unauthorized';
-END IF;
--- Never write just:
-IF v_role NOT IN ('admin', 'superadmin') THEN ...
-```
+### M2-UX — `reset_user_password` silent no-op
 
----
+`reset_user_password` RPC dropped entirely. Replaced by `admin-reset-password` Edge
+Function which returns explicit HTTP errors (401 Unauthorized, 404 Not Found, 500)
+for every failure case.
 
-### H1-SOFT — `run_daily_absent_marking` caller check is asserted, not verified
+### NULL-CALLER class — dead RPCs removed
 
-**Finding:** H1 (High)
-
-The `run_daily_absent_marking(p_caller_id uuid)` RPC verifies that the supplied UUID belongs to an admin or superadmin in `app_users` before running. This blocks teachers and anonymous callers.
-
-**Limitation:** `p_caller_id` is passed by the client. Anyone who already holds a valid admin UUID (readable via the `anon_read_app_users` policy) could supply it and pass the check without actually being logged in as that admin.
-
-**Current protection level:** Blocks casual and automated abuse. Does not block a targeted attacker with knowledge of an admin UUID.
-
-**Proper fix:** C3 — migrate to Supabase Auth so `auth.uid()` is set server-side and cannot be spoofed by the caller. The `branch_*` RLS policies are already written for this and would activate immediately on migration.
+`verify_login(text, text)` and `change_own_password(uuid, text, text)` are dead —
+replaced by Supabase Auth client calls. `reset_user_password(uuid, uuid, text, bool)`
+was dropped in the cleanup pass. The fail-open `NOT IN` risk no longer applies to
+these paths.
 
 ---
 
-## Dead Code
+## Still Open
 
-### M2-UX — `reset_user_password` silently no-ops on unauthorized target
+### CALLER-ASSERT-REMAINING — `get_payments`, `create_payment`, `run_daily_absent_marking`
 
-`reset_user_password` enforces privilege tiering via the `WHERE` clause: admin can only reset teachers (`WHERE role = 'teacher'`), superadmin can reset anyone except superadmins (`WHERE role != 'superadmin'`). If the target doesn't match (e.g. admin targets another admin, anyone targets a superadmin), `UPDATE` affects zero rows and the function returns `void` with no error.
+**Finding:** Medium
 
-**Security posture:** Fail-closed — the unauthorized reset does not happen.
+These three RPCs still accept `p_caller_id uuid` from the client rather than reading
+`auth.uid()` server-side:
 
-**UX problem:** The caller receives a success response. The UI shows no error. The admin believes the password was reset; it was not. The affected user continues using their old password, unaware.
+| RPC | Caller guard | Risk |
+|---|---|---|
+| `get_payments(uuid)` | `IS NULL OR NOT IN ('admin','superadmin')` | Fail-closed; branch RLS also filters output |
+| `create_payment(uuid,...)` | `IS NULL OR NOT IN ('admin','superadmin')` | Fail-closed; branch RLS also filters |
+| `run_daily_absent_marking(uuid)` | `IS NULL OR NOT IN ('admin','superadmin')` | Fail-closed |
 
-**Proper fix:** After each UPDATE, check `GET DIAGNOSTICS v_count = ROW_COUNT` and `RAISE EXCEPTION 'Target user not found or not in permitted role'` if `v_count = 0`. Not blocking current work — record for the next DB maintenance pass.
+Practical risk is low now that branch RLS is active (even a spoofed admin UUID can
+only affect rows in branches the caller's JWT has access to), but the caller-asserted
+pattern is still a code smell and should be migrated to `auth.uid()` in the next DB
+maintenance pass.
+
+**Proper fix:** Replace `p_caller_id` with `auth.uid()` inside each RPC; remove the
+parameter from all call sites.
 
 ---
 
-### DEAD-1 — `markAllAbsent` / `runManualAttendance` never wired up
+### DEPLOY-HARDENING — Live deploy uses `root@` over SSH
 
-`dashboard.service.js → markAllAbsent(callerId)` is called only by `useDashboard.js → runManualAttendance()`, which is returned from the hook but never consumed by any component. No button or UI surface calls it.
+The VPS deploy script runs as `root`. No immediate exploit — the server hosts only
+this app — but best practice is a dedicated deploy user with limited permissions.
 
-**Effect:** The dashboard has no "Mark & Notify" button. The only live path for absent marking is the scanner page admin button (`AdminScannerControls → runNow → runAbsentMarking`).
+**Proper fix:** Create a `deploy` user, scope it to the app directory, update the
+deploy script.
 
-**Decision needed:** Either wire `runManualAttendance` to a button on the dashboard (with appropriate role guard), or remove both `markAllAbsent` and `runManualAttendance` to reduce dead surface area. Do not act without confirming intended dashboard behaviour.
+---
+
+### ROLE-DRIFT — Role change requires two-table update
+
+A user's role is stored in two places: `app_users.role` (used by JS session +
+Edge Function guards) and `user_branch_roles.role` (used by RLS helper functions
+`is_super_admin()` and `get_my_branch_ids()`). Changing a user's role via the
+Manage Users UI updates only `app_users`. If `user_branch_roles` is not also updated
+manually, the two diverge: the UI shows the new role but RLS still enforces the old
+one (or vice versa).
+
+**Proper fix:** Write an atomic `set_user_role(target_id, new_role, new_branch_id)`
+SECURITY DEFINER RPC that updates both tables in one transaction. Until then, any
+role change must be done directly in the database.
+
+---
+
+### PRE-AUTH-UX — `getUserRole` removed; pre-login role display needs a public RPC
+
+The login form previously called `getUserRole(username)` on every keystroke to
+show/hide the teacher-name field before authentication. This required the
+`anon_read_app_users` policy. Both are now removed.
+
+The teacher-name step now appears after a successful login (two-step flow). If a
+future UX requirement needs pre-login role display (e.g. showing a role badge while
+typing), the correct implementation is a narrow `SECURITY DEFINER` RPC that returns
+only the role for a given username — not an anon read policy on `app_users`.
+
+---
+
+### DEAD-1 — `markAllAbsent` / `runManualAttendance` never wired to UI
+
+`dashboard.service.js → markAllAbsent(callerId)` is called only by
+`useDashboard.js → runManualAttendance()`, which is returned from the hook but
+consumed by no component. No button or route calls it.
+
+The only live absent-marking path is the scanner page admin button
+(`AdminScannerControls → runNow → runAbsentMarking`).
+
+**Decision needed:** Wire `runManualAttendance` to a dashboard button (with role
+guard), or remove both `markAllAbsent` and `runManualAttendance` to reduce dead
+surface area. Do not act without confirming intended dashboard behaviour.
