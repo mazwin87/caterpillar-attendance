@@ -31,9 +31,10 @@ export async function getUserRole(username) {
   return data?.role || null
 }
 
-export async function adminResetPassword(callerId, userId, newPassword) {
-  const { error } = await supabase
-    .rpc('reset_user_password', { p_caller_id: callerId, p_user_id: userId, p_new_password: newPassword, p_must_change: true })
+export async function adminResetPassword(userId, newPassword) {
+  const { error } = await supabase.functions.invoke('admin-reset-password', {
+    body: { target_user_id: userId, new_password: newPassword },
+  })
   if (error) throw new Error(`Failed to reset: ${error.message}`)
 }
 
