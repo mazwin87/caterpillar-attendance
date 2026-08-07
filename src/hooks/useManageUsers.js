@@ -15,7 +15,7 @@ export function useManageUsers(session) {
   async function loadUsers() {
     setLoading(true)
     try {
-      const data = await getUsers({ isSuperAdmin, branchId: session?.branch_id })
+      const data = await getUsers()
       setUsers(data)
     } finally {
       setLoading(false)

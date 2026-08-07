@@ -37,20 +37,8 @@ export async function adminResetPassword(callerId, userId, newPassword) {
   if (error) throw new Error(`Failed to reset: ${error.message}`)
 }
 
-export async function getUsers({ isSuperAdmin, branchId }) {
-  let query = supabase
-    .from('app_users')
-    .select('id, username, role, branch_id, branches(name)')
-    .neq('role', 'superadmin')
-    .order('role', { ascending: true })
-    .order('username', { ascending: true })
-
-  if (!isSuperAdmin) {
-    query = query.eq('role', 'teacher')
-    if (branchId) query = query.eq('branch_id', branchId)
-  }
-
-  const { data, error } = await query
+export async function getUsers() {
+  const { data, error } = await supabase.rpc('get_users_for_admin')
   if (error) throw error
   return data || []
 }

@@ -20,7 +20,7 @@ export default function ChangePasswordForm({ session, onDone }) {
     try {
       const { error: pwErr } = await supabase.auth.updateUser({ password: newPass })
       if (pwErr) throw new Error(pwErr.message)
-      await supabase.auth.updateUser({ data: { must_change_password: false } })
+      await supabase.rpc('clear_my_must_change_password')
       onDone()
     } catch (err) {
       setError(err.message)
