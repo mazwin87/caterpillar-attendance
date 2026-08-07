@@ -25,7 +25,7 @@ export function useManageUsers(session) {
   async function resetPassword(userId, newPassword) {
     setSaving(true)
     try {
-      await adminResetPassword(userId, newPassword)
+      await adminResetPassword(session?.id, userId, newPassword)
     } finally {
       setSaving(false)
     }

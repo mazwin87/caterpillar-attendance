@@ -1,14 +1,25 @@
 import { supabase } from '../supabase'
 
 export async function loginWithCredentials(username, password) {
-  const { data, error } = await supabase
-    .from('app_users')
-    .select('*, branches(name, slug)')
-    .eq('username', username.toLowerCase().trim())
-    .eq('password', password)
-    .single()
-  if (error || !data) throw new Error('Incorrect username or password.')
-  return data
+  const u = username.toLowerCase().trim()
+
+  const { data, error } = await supabase.auth.signInWithPassword({
+    email:    u + '@cpcc.internal',
+    password,
+  })
+  if (error || !data.user) throw new Error('Incorrect username or password.')
+
+  const { data: profile, error: profileErr } = await supabase.rpc('get_my_profile')
+  if (profileErr || !profile) throw new Error('Could not load user profile.')
+
+  return {
+    id:                   data.user.id,
+    username:             u,
+    role:                 profile.role,
+    branch_id:            profile.branch_id,
+    branches:             profile.branches,
+    must_change_password: profile.must_change_password,
+  }
 }
 
 export async function getUserRole(username) {
@@ -20,17 +31,9 @@ export async function getUserRole(username) {
   return data?.role || null
 }
 
-export async function changeOwnPassword(userId, newPassword) {
+export async function adminResetPassword(callerId, userId, newPassword) {
   const { error } = await supabase
-    .from('app_users')
-    .update({ password: newPassword, must_change_password: false })
-    .eq('id', userId)
-  if (error) throw new Error('Failed to update password. Please try again.')
-}
-
-export async function adminResetPassword(userId, newPassword) {
-  const { error } = await supabase
-    .rpc('reset_user_password', { p_user_id: userId, p_new_password: newPassword, p_must_change: false })
+    .rpc('reset_user_password', { p_caller_id: callerId, p_user_id: userId, p_new_password: newPassword, p_must_change: true })
   if (error) throw new Error(`Failed to reset: ${error.message}`)
 }
 

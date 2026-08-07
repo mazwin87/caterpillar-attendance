@@ -1,6 +1,5 @@
 import { useState } from 'react'
-import { updateSession } from '../../../lib/auth'
-import { changeOwnPassword } from '../../../lib/services/users.service'
+import { supabase } from '../../../lib/supabase'
 import { Input, Button } from '../../ui'
 
 const FIELD = { style: { fontSize: 15, padding: '13px 16px' } }
@@ -19,8 +18,9 @@ export default function ChangePasswordForm({ session, onDone }) {
 
     setLoading(true)
     try {
-      await changeOwnPassword(session.id, newPass)
-      updateSession({ must_change_password: false })
+      const { error: pwErr } = await supabase.auth.updateUser({ password: newPass })
+      if (pwErr) throw new Error(pwErr.message)
+      await supabase.auth.updateUser({ data: { must_change_password: false } })
       onDone()
     } catch (err) {
       setError(err.message)

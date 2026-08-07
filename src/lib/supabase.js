@@ -91,85 +91,25 @@ export async function addHoliday({ student_id, branch_id, start_date, end_date, 
   return data
 }
 
-export async function getPayments(branchId = null) {
-  let query = supabase
-    .from('payments')
-    .select('*, students(name, student_no, branches(name, address, phone, email, website, reg_no))')
-    .order('created_at', { ascending: false })
-  if (branchId) query = query.eq('branch_id', branchId)
-  const { data, error } = await query
+export async function getPayments(callerId) {
+  const { data, error } = await supabase.rpc('get_payments', { p_caller_id: callerId })
   if (error) throw error
   return data
 }
 
-export async function createPayment({ student_id, branch_id, amount, month, year, paid_date, payment_method, notes, issued_by }) {
-  const { data: receiptData } = await supabase
-    .rpc('generate_receipt_no', { p_branch_id: branch_id })
-
-  const { data, error } = await supabase
-    .from('payments')
-    .insert({
-      student_id, branch_id, amount, month, year,
-      paid_date, payment_method, notes,
-      receipt_no: receiptData,
-      issued_by,
-    })
-    .select('*, students(name, student_no, branches(name, address, phone, email, website, reg_no))')
-    .single()
+export async function createPayment({ callerId, student_id, branch_id, amount, month, year, paid_date, payment_method, notes, issued_by }) {
+  const { data, error } = await supabase.rpc('create_payment', {
+    p_caller_id:      callerId,
+    p_student_id:     student_id,
+    p_branch_id:      branch_id,
+    p_amount:         amount,
+    p_month:          month,
+    p_year:           year,
+    p_paid_date:      paid_date,
+    p_payment_method: payment_method,
+    p_notes:          notes || null,
+    p_issued_by:      issued_by,
+  })
   if (error) throw error
   return data
-}
-
-export async function importStudentsCSV(rows) {
-  const success = []
-  const errors  = []
-
-  for (const row of rows) {
-    try {
-      const { data: branch } = await supabase
-        .from('branches').select('id').eq('slug', row.branch_slug.toUpperCase()).single()
-      if (!branch) throw new Error(`Branch not found: ${row.branch_slug}`)
-
-      const { data: student, error: sErr } = await supabase
-        .from('students')
-        .insert({
-          name:          row.name.trim(),
-          student_no:    row.student_no.trim(),
-          branch_id:     branch.id,
-          date_of_birth: row.date_of_birth || null,
-          monthly_fee:   parseFloat(row.monthly_fee) || 0,
-          age_group:     row.age_group?.trim() || null,   // ← ADD THIS
-        })
-        .select().single()
-      if (sErr) throw new Error(sErr.message)
-
-      if (row.parent_name || row.parent_phone) {
-        await supabase.from('parents').insert({
-          student_id: student.id,
-          name:       row.parent_name  || null,
-          phone:      row.parent_phone || null,
-          email:      row.parent_email || null,
-        })
-      }
-
-      if (row.fee_month && row.fee_year && row.fee_amount) {
-        await createPayment({
-          student_id:     student.id,
-          branch_id:      branch.id,
-          amount:         parseFloat(row.fee_amount),
-          month:          row.fee_month,
-          year:           parseInt(row.fee_year),
-          paid_date:      row.fee_paid_date || new Date().toISOString().split('T')[0],
-          payment_method: row.fee_payment_method || 'Cash',
-          issued_by:      'Import',
-        })
-      }
-
-      success.push(row)
-    } catch (err) {
-      errors.push({ row, reason: err.message })
-    }
-  }
-
-  return { success, errors }
 }

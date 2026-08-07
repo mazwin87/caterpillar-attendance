@@ -41,7 +41,7 @@ export async function getTodayEvent() {
   return data || null
 }
 
-export async function markAbsentForEvent(todayEvent) {
+export async function markAbsentForEvent(todayEvent, callerId) {
   const today = new Date().toISOString().split('T')[0]
 
   const { data: allStudents } = await supabase
@@ -76,11 +76,15 @@ export async function markAbsentForEvent(todayEvent) {
     await supabase.from('attendance').insert(absentRows)
   }
 
-  await fetch('https://rykxrnhwvvlwlxdzjyub.supabase.co/functions/v1/notify_absent_parents')
+  await fetch('https://rykxrnhwvvlwlxdzjyub.supabase.co/functions/v1/notify_absent_parents', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ caller_id: callerId }),
+  })
   return { count: toMarkAbsent.length }
 }
 
-export async function markAllAbsent() {
-  const { error } = await supabase.rpc('run_daily_absent_marking')
+export async function markAllAbsent(callerId) {
+  const { error } = await supabase.rpc('run_daily_absent_marking', { p_caller_id: callerId })
   if (error) throw new Error(error.message)
 }

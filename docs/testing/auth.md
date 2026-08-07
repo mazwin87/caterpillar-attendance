@@ -97,9 +97,9 @@ Before running any test case:
 
 | Field | Detail |
 |---|---|
-| **What** | A valid new password is accepted and the user proceeds |
-| **Steps** | 1. On the Change Password screen → 2. Enter a new password (≥ 6 chars) → 3. Confirm it → 4. Tap "Set New Password" |
-| **Expected** | `must_change_password` updated to `false` in `app_users`; session updated accordingly; user redirected to scanner |
+| **What** | A valid password change is accepted and the user proceeds |
+| **Steps** | 1. On the Change Password screen → 2. Enter the **current** password → 3. Enter new password (≥ 6 chars) → 4. Confirm new password → 5. Tap "Set New Password" |
+| **Expected** | `must_change_password` updated to `false` in `app_users`; session updated; user redirected to scanner |
 | **Status** | — |
 
 ---
@@ -108,8 +108,8 @@ Before running any test case:
 
 | Field | Detail |
 |---|---|
-| **What** | Password shorter than 6 characters is rejected client-side |
-| **Steps** | 1. Enter "abc" as new password and confirm → tap "Set New Password" |
+| **What** | New password shorter than 6 characters is rejected client-side |
+| **Steps** | 1. Fill current password → enter "abc" as new password and confirm → tap "Set New Password" |
 | **Expected** | Error "Password must be at least 6 characters." shown; no Supabase call made |
 | **Status** | — |
 
@@ -120,8 +120,30 @@ Before running any test case:
 | Field | Detail |
 |---|---|
 | **What** | Non-matching confirm password is rejected client-side |
-| **Steps** | 1. Enter "password1" and "password2" → tap "Set New Password" |
+| **Steps** | 1. Fill current password → enter "password1" and "password2" → tap "Set New Password" |
 | **Expected** | Error "Passwords do not match." shown; no Supabase call made |
+| **Status** | — |
+
+---
+
+### TC-A-09b — Wrong current password rejected
+
+| Field | Detail |
+|---|---|
+| **What** | Entering the wrong current password is rejected by the DB |
+| **Steps** | 1. Enter a wrong current password → enter valid matching new passwords → tap "Set New Password" |
+| **Expected** | Error "Current password is incorrect." shown; no password change in DB |
+| **Status** | — |
+
+---
+
+### TC-A-09c — Empty current password rejected
+
+| Field | Detail |
+|---|---|
+| **What** | Leaving the current password blank is caught client-side |
+| **Steps** | 1. Leave current password empty → fill new passwords → tap "Set New Password" |
+| **Expected** | Error "Current password is required." shown; no Supabase call made |
 | **Status** | — |
 
 ---
@@ -207,7 +229,8 @@ Before running any test case:
 
 ## Regression Notes
 
-- The Supabase password query (`eq('password', ...)`) is now isolated in `lib/services/users.service.js → loginWithCredentials()`. Any future auth strategy change (e.g. bcrypt) should only touch that function.
-- `lib/auth.js` (localStorage session helpers) is unchanged — it has no Supabase dependency and is safe to use from any layer.
-- The teacher-name field visibility is driven by a live role lookup (`getUserRole`) on each username keystroke after 2 characters. This is a network call — confirm it does not fire on every keystroke past 2 chars under slow network conditions.
-- `must_change_password` flag is cleared via a direct `app_users` update in `changeOwnPassword()`, not via the RPC used for admin resets. These are two different code paths — test both independently.
+- Login now calls the `verify_login(p_username, p_password)` RPC instead of a direct table query. The RPC uses pgcrypto `crypt()` to compare the supplied password against the stored bcrypt hash. All passwords in `app_users` were migrated to bcrypt (`$2a$10$`) on 2026-08-06.
+- `changeOwnPassword` now calls `change_own_password(p_user_id, p_current_password, p_new_password)`. The RPC verifies the current password server-side before updating. The ChangePasswordForm has three fields: current password, new password, confirm new password.
+- `lib/auth.js` (localStorage session helpers) is unchanged — it has no Supabase dependency.
+- The teacher-name field visibility is driven by a live role lookup (`getUserRole`) on each username keystroke after 2 characters. Confirm it does not fire on every keystroke past 2 chars under slow network conditions.
+- Admin password reset (`adminResetPassword`) and self-service change (`changeOwnPassword`) are two separate RPCs and two separate code paths — test both independently.

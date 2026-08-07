@@ -65,6 +65,7 @@ export function useManualReceipt(session) {
     for (const month of sortedMonths) {
       try {
         const payment = await createPayment({
+          callerId:       session?.id,
           student_id:     form.student_id,
           branch_id:      form.branch_id,
           amount:         parseFloat(form.amount),

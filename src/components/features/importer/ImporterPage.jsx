@@ -4,7 +4,7 @@ import { BRANCH_SLUGS } from '../../../lib/constants/branches'
 import { AGE_GROUPS } from '../../../lib/constants/ageGroups'
 import { MONTHS, PAYMENT_METHODS } from '../../../lib/constants/months'
 
-export default function ImporterPage() {
+export default function ImporterPage({ session }) {
   const [importData, setImportData]     = useState([])
   const [importErrors, setImportErrors] = useState([])
   const [importing, setImporting]       = useState(false)
@@ -83,7 +83,7 @@ export default function ImporterPage() {
     if (importErrors.length > 0) { alert('Please fix all errors before importing'); return }
     if (importData.length === 0) { alert('No data to import'); return }
     setImporting(true)
-    const results = await importStudentsCSV(importData)
+    const results = await importStudentsCSV(importData, session?.id)
     setImportDone(results)
     setImporting(false)
   }

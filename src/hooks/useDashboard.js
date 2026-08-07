@@ -65,11 +65,11 @@ export function useDashboard(session) {
           `Event detected: "${todayEvent.name}"\n\nOnly students from selected branches and age groups will be marked absent. Continue?`
         )
         if (!confirmed) return
-        const { count } = await markAbsentForEvent(todayEvent)
+        const { count } = await markAbsentForEvent(todayEvent, session?.id)
         if (count === 0) { alert('No eligible students found for this event.'); return }
         alert(`Done! ${count} students marked absent for "${todayEvent.name}".`)
       } else {
-        await markAllAbsent()
+        await markAllAbsent(session?.id)
         alert('Done! Absent students marked and notifications sent.')
       }
 

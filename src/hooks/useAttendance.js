@@ -147,7 +147,7 @@ export function useAttendance(session) {
     setRunningNow(true)
     setRunResult(null)
     try {
-      await runAbsentMarking()
+      await runAbsentMarking(session?.id)
     } catch (err) {
       console.warn(err)
     } finally {

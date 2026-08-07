@@ -1,7 +1,7 @@
 import { supabase, createPayment } from '../supabase'
 import { getMYT } from '../utils/date'
 
-export async function importStudentsCSV(rows) {
+export async function importStudentsCSV(rows, callerId) {
   const success = []
   const errors  = []
 
@@ -35,6 +35,7 @@ export async function importStudentsCSV(rows) {
 
       if (row.fee_month && row.fee_year && row.fee_amount) {
         await createPayment({
+          callerId:       callerId,
           student_id:     student.id,
           branch_id:      branch.id,
           amount:         parseFloat(row.fee_amount),

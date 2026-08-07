@@ -18,8 +18,20 @@ async function sendMessage(chatId: number, text: string, keyboard?: any) {
   return res.json()
 }
 
-Deno.serve(async () => {
+Deno.serve(async (req: Request) => {
+  let caller_id: string | null = null
+  try { caller_id = (await req.json())?.caller_id ?? null } catch {}
+
   const supabase = createClient(SUPABASE_URL, SUPABASE_KEY)
+
+  if (!caller_id) {
+    return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401 })
+  }
+  const { data: caller } = await supabase
+    .from('app_users').select('role').eq('id', caller_id).single()
+  if (!caller || !['admin', 'superadmin'].includes(caller.role)) {
+    return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401 })
+  }
 
   // Derive today's date in Malaysia time (UTC+8) so the query date matches
   // what the frontend wrote when recording attendance.

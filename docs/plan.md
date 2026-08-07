@@ -368,6 +368,37 @@ DesktopShell → <ScannerPage defaultMode="manual" />
 
 ---
 
+## Unit Test Coverage
+
+98 tests across 10 test files (`npm test`). E2E: 1 test (`npx playwright test`).
+
+| Service / util | Functions covered | Status |
+|---|---|---|
+| `attendance.service.js` | `recordScan`, `verifyStudentBranch`, `getTodayCounts`, `getStudentsForBranch`, `upsertAttendance`, `getScannerBranches` | [x] |
+| `students.service.js` | `getStudents`, `getBranches`, `generateStudentNo`, `addStudent`, `addParent`, `updateStudent`, `deactivateStudent` | [x] |
+| `holidays.service.js` | `getHolidays`, `getClosures`, `createHoliday`, `deleteHoliday`, `createClosure`, `deleteClosure`, `deletePastClosures` | [x] |
+| `events.service.js` | `getEvents`, `createEvent`, `deleteEvent` | [x] |
+| `reports.service.js` | `getAttendanceRange` | [x] |
+| `receipts.service.js` | `getReceiptById` | [x] |
+| `users.service.js` | `loginWithCredentials`, `getUserRole`, `adminResetPassword`, `changeOwnPassword`, `getUsers` | [x] |
+| `dashboard.service.js` | `getDrilldown`, `overrideStatus`, `getTodayEvent`, `markAbsentForEvent`, `markAllAbsent` | [x] |
+| `utils/date.js` | `getMYT`, `getMYTDaysAgo` | [x] |
+| `utils/csv.js` | `exportToCSV` | [x] |
+| `fees.service.js` | `getParentTelegramId`, `sendTelegramReceipt` | [ ] |
+| `manual-receipt.service.js` | `sendTelegramMultiReceipt` | [ ] |
+| `importer.service.js` | `importStudentsCSV` | [ ] |
+| `utils/receipt.js` | `generateReceiptHTML` | [ ] |
+| `utils/print.js` | `openPrintWindow` | [ ] |
+| `utils/qr.js` | `generateQRDataURL`, `openQRBatchPrint` | [ ] |
+| All hooks | — | [ ] |
+| All UI components | — | [ ] |
+
+## Known gaps
+
+- `checkin-to-report` E2E uses fully mocked Supabase responses — does not validate real schema/RLS. Consider a smoke test against a seeded staging Supabase project before production deploy.
+
+---
+
 ## Open Decisions (needs your input before implementation)
 
 1. **Auth strategy.** Current app uses a custom `app_users` table with plain-text passwords. The target can either: (a) migrate to Supabase Auth (email/password with bcrypt) — more work, more secure; or (b) keep the custom table but hash passwords server-side via a Route Handler — less migration risk. Which approach?
