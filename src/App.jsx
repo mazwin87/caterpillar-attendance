@@ -14,6 +14,7 @@ import Login from './components/Login'
 import Receipt from './components/Receipt'
 import Importer from './components/Importer'
 import { getSession, clearSession, updateSession } from './lib/auth'
+import { supabase } from './lib/supabase'
 import ManualReceipt from './components/ManualReceipt'
 import ChangePassword from './components/ChangePassword'
 import ManageUsers from './components/ManageUsers'
@@ -32,12 +33,23 @@ export default function App() {
     const midnight = new Date()
     midnight.setHours(24, 0, 0, 0)
     const msUntilMidnight = midnight - now
-    const timer = setTimeout(() => {
+    const midnightTimer = setTimeout(() => {
+      supabase.auth.signOut()
       clearSession()
       setSession(null)
     }, msUntilMidnight)
 
-    return () => clearTimeout(timer)
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
+      if (event === 'SIGNED_OUT') {
+        clearSession()
+        setSession(null)
+      }
+    })
+
+    return () => {
+      clearTimeout(midnightTimer)
+      subscription.unsubscribe()
+    }
   }, [])
 
   function handleLogin(user, teacherName) {
@@ -50,14 +62,14 @@ export default function App() {
   }
 
   function handleLogout() {
+    supabase.auth.signOut()
     clearSession()
     setSession(null)
   }
 
   if (checking) return <div style={{ color: 'white' }}>Loading...</div>
 
-  const isAdmin      = session?.role === 'admin' || session?.role === 'superadmin'
-  const isSuperAdmin = session?.role === 'superadmin'
+  const isAdmin = session?.role === 'admin' || session?.role === 'superadmin'
 
   return (
     <BrowserRouter basename="/cpcc">
@@ -83,7 +95,7 @@ export default function App() {
                   {isAdmin && <Route path="/admin"          element={<Admin session={session} />} />}
                   {isAdmin && <Route path="/reports"        element={<Reports t={t} />} />}
                   {isAdmin && <Route path="/fees"           element={<Fees session={session} />} />}
-                  {isAdmin && <Route path="/import"         element={<Importer />} />}
+                  {isAdmin && <Route path="/import"         element={<Importer session={session} />} />}
                   {isAdmin && <Route path="/manual-receipt" element={<ManualReceipt session={session} />} />}
                   {isAdmin && <Route path="/manage-users"   element={<ManageUsers session={session} />} />}
                   <Route path="*" element={<Navigate to="/scanner" replace />} />
