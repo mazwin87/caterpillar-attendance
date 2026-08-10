@@ -56,9 +56,10 @@ export async function upsertAttendance(student, status) {
   }
 }
 
-export async function runAbsentMarking(callerId) {
-  await supabase.rpc('run_daily_absent_marking', { p_caller_id: callerId })
-  await supabase.functions.invoke('notify_absent_parents', { body: { caller_id: callerId } })
+export async function runAbsentMarking() {
+  await supabase.rpc('run_daily_absent_marking')
+  const { data: { session } } = await supabase.auth.getSession()
+  await supabase.functions.invoke('notify_absent_parents', { body: { caller_id: session?.user?.id } })
 }
 
 export async function getScannerBranches() {

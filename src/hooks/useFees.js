@@ -20,7 +20,7 @@ export function useFees(session) {
   const [sending, setSending]       = useState(null)
 
   useEffect(() => {
-    Promise.all([getStudents(), getBranches(), getPayments(session?.id)])
+    Promise.all([getStudents(), getBranches(), getPayments()])
       .then(([s, b, p]) => { setStudents(s); setBranches(b); setPayments(p) })
       .finally(() => setLoading(false))
   }, [])
@@ -68,7 +68,6 @@ export function useFees(session) {
     setProcessing(true)
     try {
       const payment = await createPayment({
-        callerId:       session?.id,
         student_id:     student.id,
         branch_id:      student.branch_id,
         amount:         parseFloat(amount) || student.monthly_fee,
@@ -96,7 +95,6 @@ export function useFees(session) {
         if (!student) continue
         try {
           const payment = await createPayment({
-            callerId:       session?.id,
             student_id:     student.id,
             branch_id:      student.branch_id,
             amount:         student.monthly_fee || 0,

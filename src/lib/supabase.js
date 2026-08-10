@@ -91,15 +91,14 @@ export async function addHoliday({ student_id, branch_id, start_date, end_date, 
   return data
 }
 
-export async function getPayments(callerId) {
-  const { data, error } = await supabase.rpc('get_payments', { p_caller_id: callerId })
+export async function getPayments() {
+  const { data, error } = await supabase.rpc('get_payments')
   if (error) throw error
   return data
 }
 
-export async function createPayment({ callerId, student_id, branch_id, amount, month, year, paid_date, payment_method, notes, issued_by }) {
+export async function createPayment({ student_id, branch_id, amount, month, year, paid_date, payment_method, notes, issued_by }) {
   const { data, error } = await supabase.rpc('create_payment', {
-    p_caller_id:      callerId,
     p_student_id:     student_id,
     p_branch_id:      branch_id,
     p_amount:         amount,

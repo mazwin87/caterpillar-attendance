@@ -41,26 +41,23 @@ these paths.
 
 ## Still Open
 
-### CALLER-ASSERT-REMAINING — `get_payments`, `create_payment`, `run_daily_absent_marking`
+### CALLER-ASSERT-NOTIFY — `notify_absent_parents` edge function
 
-**Finding:** Medium
+**Finding:** Low
 
-These three RPCs still accept `p_caller_id uuid` from the client rather than reading
-`auth.uid()` server-side:
+`notify_absent_parents` still receives `caller_id` as a plain UUID in the POST body
+(`attendance.service.js → runAbsentMarking` passes `session?.user?.id` from
+`supabase.auth.getSession()`). The edge function independently verifies the role
+against `app_users` using the service role key (H5 guard), so this is belt-and-
+suspenders: a spoofed or missing `caller_id` is rejected before any action is taken.
 
-| RPC | Caller guard | Risk |
-|---|---|---|
-| `get_payments(uuid)` | `IS NULL OR NOT IN ('admin','superadmin')` | Fail-closed; branch RLS also filters output |
-| `create_payment(uuid,...)` | `IS NULL OR NOT IN ('admin','superadmin')` | Fail-closed; branch RLS also filters |
-| `run_daily_absent_marking(uuid)` | `IS NULL OR NOT IN ('admin','superadmin')` | Fail-closed |
+The RPC call path (`run_daily_absent_marking`) was migrated to `auth.uid()` on
+2026-08-10 — the edge function is the last caller-asserted path.
 
-Practical risk is low now that branch RLS is active (even a spoofed admin UUID can
-only affect rows in branches the caller's JWT has access to), but the caller-asserted
-pattern is still a code smell and should be migrated to `auth.uid()` in the next DB
-maintenance pass.
-
-**Proper fix:** Replace `p_caller_id` with `auth.uid()` inside each RPC; remove the
-parameter from all call sites.
+**Proper fix:** Update the edge function to read the caller's JWT from the
+`Authorization: Bearer <token>` header (set automatically by `functions.invoke`)
+and call `supabase.auth.getUser(jwt)` to get the caller UUID server-side. This
+removes the body `caller_id` field entirely.
 
 ---
 

@@ -84,7 +84,7 @@ export async function markAbsentForEvent(todayEvent, callerId) {
   return { count: toMarkAbsent.length }
 }
 
-export async function markAllAbsent(callerId) {
-  const { error } = await supabase.rpc('run_daily_absent_marking', { p_caller_id: callerId })
+export async function markAllAbsent() {
+  const { error } = await supabase.rpc('run_daily_absent_marking')
   if (error) throw new Error(error.message)
 }
