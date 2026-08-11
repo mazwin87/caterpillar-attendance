@@ -1,8 +1,92 @@
 import { useState } from 'react'
-import { PageHeader, Table, Button, Spinner, EmptyState } from '../../ui'
+import { PageHeader, Button, Spinner, EmptyState } from '../../ui'
 import { AGE_GROUP_LABELS } from '../../../lib/constants/ageGroups'
 import { shortBranchName } from '../../../lib/constants/branches'
 import EventForm from './EventForm'
+
+function EventCard({ ev, branches, isToday, isUpcoming, onDelete }) {
+  function branchLabel(id) {
+    return shortBranchName(branches.find(b => b.id === id)?.name) || id
+  }
+
+  const today    = isToday(ev)
+  const upcoming = isUpcoming(ev)
+  const accentColor = today ? 'var(--present)' : upcoming ? 'var(--holiday)' : 'var(--border)'
+
+  return (
+    <div style={{
+      background: 'var(--surface)',
+      border: `0.5px solid ${today ? 'var(--present)' : 'var(--border)'}`,
+      borderLeft: `4px solid ${accentColor}`,
+      borderRadius: 14, padding: '20px 20px 16px',
+      display: 'flex', flexDirection: 'column', gap: 12,
+      position: 'relative',
+    }}>
+      {/* Status badge */}
+      <div style={{ position: 'absolute', top: 16, right: 16 }}>
+        {today && (
+          <span style={{ fontSize: 11, padding: '3px 10px', borderRadius: 20, background: 'var(--present-bg)', color: 'var(--present)', fontWeight: 600 }}>Today</span>
+        )}
+        {upcoming && (
+          <span style={{ fontSize: 11, padding: '3px 10px', borderRadius: 20, background: 'var(--holiday-bg)', color: 'var(--holiday)', fontWeight: 500 }}>Upcoming</span>
+        )}
+        {!today && !upcoming && (
+          <span style={{ fontSize: 11, padding: '3px 10px', borderRadius: 20, background: 'var(--bg)', color: 'var(--muted)' }}>Past</span>
+        )}
+      </div>
+
+      {/* Name + date */}
+      <div style={{ paddingRight: 72 }}>
+        <div style={{ fontSize: 17, fontWeight: 600, color: 'var(--text)', marginBottom: 4, lineHeight: 1.3 }}>
+          {ev.name}
+        </div>
+        <div style={{ fontSize: 13, color: 'var(--muted)' }}>
+          {new Date(ev.date).toLocaleDateString('en-MY', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
+        </div>
+      </div>
+
+      {/* Branches */}
+      <div>
+        <div style={{ fontSize: 10, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 6 }}>Branches</div>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
+          {ev.branches.map(id => (
+            <span key={id} style={{ fontSize: 11, padding: '3px 10px', borderRadius: 20, background: 'var(--present-bg)', color: 'var(--present)', fontWeight: 500 }}>
+              {branchLabel(id)}
+            </span>
+          ))}
+        </div>
+      </div>
+
+      {/* Age groups */}
+      <div>
+        <div style={{ fontSize: 10, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 6 }}>Age Groups</div>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
+          {ev.age_groups.map(g => (
+            <span key={g} style={{ fontSize: 11, padding: '3px 10px', borderRadius: 20, background: 'var(--holiday-bg)', color: 'var(--holiday)' }}>
+              {AGE_GROUP_LABELS[g] || g}
+            </span>
+          ))}
+        </div>
+      </div>
+
+      {/* Delete */}
+      <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 4 }}>
+        <button
+          onClick={() => onDelete(ev.id)}
+          style={{
+            background: 'none', border: 'none', cursor: 'pointer',
+            fontSize: 12, color: 'var(--muted)', padding: '4px 8px',
+            borderRadius: 6, transition: 'all 0.15s',
+          }}
+          onMouseEnter={e => { e.currentTarget.style.color = 'var(--absent)'; e.currentTarget.style.background = 'var(--absent-bg)' }}
+          onMouseLeave={e => { e.currentTarget.style.color = 'var(--muted)'; e.currentTarget.style.background = 'none' }}
+        >
+          🗑️ Delete
+        </button>
+      </div>
+    </div>
+  )
+}
 
 export default function EventsDesktopView({
   events, branches, loading, saving,
@@ -15,53 +99,6 @@ export default function EventsDesktopView({
     await addEvent(form)
     setShowForm(false)
   }
-
-  function branchLabel(id) {
-    return shortBranchName(branches.find(b => b.id === id)?.name) || id
-  }
-
-  function statusBadge(ev) {
-    if (isToday(ev)) return (
-      <span style={{ fontSize: 11, padding: '2px 10px', borderRadius: 20, background: 'var(--present-bg)', color: 'var(--present)', fontWeight: 500 }}>Today</span>
-    )
-    if (isUpcoming(ev)) return (
-      <span style={{ fontSize: 11, padding: '2px 10px', borderRadius: 20, background: 'var(--holiday-bg)', color: 'var(--holiday)', fontWeight: 500 }}>Upcoming</span>
-    )
-    return (
-      <span style={{ fontSize: 11, padding: '2px 10px', borderRadius: 20, background: 'var(--bg)', color: 'var(--muted)' }}>Past</span>
-    )
-  }
-
-  const columns = [
-    { key: 'name',   label: 'Event', render: ev => <div style={{ fontWeight: 500 }}>{ev.name}</div> },
-    { key: 'date',   label: 'Date',  sortable: true, render: ev => (
-      new Date(ev.date).toLocaleDateString('en-MY', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' })
-    )},
-    { key: 'status', label: 'Status', render: statusBadge },
-    { key: 'branches', label: 'Branches', render: ev => (
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
-        {ev.branches.map(id => (
-          <span key={id} style={{ fontSize: 11, padding: '2px 8px', borderRadius: 20, background: 'var(--present-bg)', color: 'var(--present)' }}>
-            {branchLabel(id)}
-          </span>
-        ))}
-      </div>
-    )},
-    { key: 'age_groups', label: 'Age Groups', render: ev => (
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
-        {ev.age_groups.map(g => (
-          <span key={g} style={{ fontSize: 11, padding: '2px 8px', borderRadius: 20, background: 'var(--holiday-bg)', color: 'var(--holiday)' }}>
-            {AGE_GROUP_LABELS[g] || g}
-          </span>
-        ))}
-      </div>
-    )},
-    { key: 'actions', label: '', render: ev => (
-      <Button variant="danger" onClick={() => removeEvent(ev.id)} style={{ padding: '4px 10px', fontSize: 12 }}>
-        🗑️
-      </Button>
-    )},
-  ]
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%', background: 'var(--bg)' }}>
@@ -79,7 +116,18 @@ export default function EventsDesktopView({
         ) : events.length === 0 ? (
           <EmptyState>No events yet</EmptyState>
         ) : (
-          <Table columns={columns} rows={events} />
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 16 }}>
+            {events.map(ev => (
+              <EventCard
+                key={ev.id}
+                ev={ev}
+                branches={branches}
+                isToday={isToday}
+                isUpcoming={isUpcoming}
+                onDelete={removeEvent}
+              />
+            ))}
+          </div>
         )}
       </div>
 
