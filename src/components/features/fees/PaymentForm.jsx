@@ -2,14 +2,14 @@ import { useState } from 'react'
 import { Modal, Input, Button, Checkbox } from '../../ui'
 import { PAYMENT_METHODS } from '../../../lib/constants/months'
 
-export default function PaymentForm({ student, filterMonth, filterYear, onSave, onClose, isProcessing }) {
+export default function PaymentForm({ student, filterMonth, filterYear, onSave, onClose, isProcessing, variant = 'bottom' }) {
   const [amount, setAmount] = useState(String(student.monthly_fee || ''))
   const [method, setMethod] = useState('Cash')
   const [date, setDate]     = useState(new Date().toISOString().split('T')[0])
   const [sendTG, setSendTG] = useState(false)
 
   return (
-    <Modal onClose={onClose}>
+    <Modal onClose={onClose} variant={variant}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
         <div>
           <div style={{ fontSize: 16, fontWeight: 500, color: 'var(--text)' }}>Record Payment</div>

@@ -1,4 +1,5 @@
 export { default as Button }      from './Button'
+export { default as DataFilter }  from './DataFilter'
 export { default as Checkbox }    from './Checkbox'
 export { default as EmptyState }  from './EmptyState'
 export { default as Input }       from './Input'
