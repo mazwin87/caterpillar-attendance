@@ -98,8 +98,9 @@ export default function App() {
                       <Route path="/holidays"  element={<Holidays t={t} isAdmin={isAdmin} />} />
                       <Route path="/events"    element={<Events t={t} />} />
                       {isAdmin && <Route path="/admin"          element={<Admin session={session} />} />}
-                      {/* TEMP: route guard removed to verify RLS scoping for teachers — restore after test */}
-                      <Route path="/reports" element={<Reports t={t} />} />
+                      {/* Admin-only by product decision. Defense in depth: even if route bypassed,
+                          getAttendanceRange is scoped by auth_attendance RLS — teacher gets only their branch. */}
+                      {isAdmin && <Route path="/reports" element={<Reports t={t} />} />}
                       {isAdmin && <Route path="/fees"           element={<Fees session={session} />} />}
                       {isAdmin && <Route path="/import"         element={<Importer session={session} />} />}
                       {isAdmin && <Route path="/manual-receipt" element={<ManualReceipt session={session} />} />}
