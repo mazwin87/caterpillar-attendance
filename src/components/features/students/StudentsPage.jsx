@@ -7,6 +7,6 @@ export default function StudentsPage({ session }) {
   const isDesktop = useMediaQuery('(min-width: 1024px)')
   const hook = useStudents(session)
   return isDesktop
-    ? <StudentsDesktopView {...hook} />
+    ? <StudentsDesktopView session={session} {...hook} />
     : <StudentsMobileView  {...hook} />
 }

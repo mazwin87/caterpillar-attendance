@@ -7,6 +7,7 @@ import StudentForm from './StudentForm'
 import QRCodeModal from './QRCodeModal'
 
 export default function StudentsDesktopView({
+  session,
   students, branches, loading, saving, printingQR, attendanceMap,
   getAutoStudentNo, add, update, remove, batchPrintQR,
 }) {
@@ -152,10 +153,15 @@ export default function StudentsDesktopView({
     },
   ]
 
+  const isAdmin = session?.role === 'admin' || session?.role === 'superadmin'
+  const pageTitle = isAdmin
+    ? (filterBranch ? branches.find(b => b.id === filterBranch)?.name ?? 'Students' : 'Students')
+    : (session?.branches?.name || branches[0]?.name || 'Students')
+
   return (
     <div style={{ minHeight: '100%' }}>
       <PageHeader
-        title="Students"
+        title={pageTitle}
         subtitle={`${filtered.length} of ${students.length} students`}
         actions={
           <>
