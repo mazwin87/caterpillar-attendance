@@ -75,14 +75,12 @@ deploy script.
 
 A user's role is stored in two places: `app_users.role` (used by JS session +
 Edge Function guards) and `user_branch_roles.role` (used by RLS helper functions
-`is_super_admin()` and `get_my_branch_ids()`). Changing a user's role via the
-Manage Users UI updates only `app_users`. If `user_branch_roles` is not also updated
-manually, the two diverge: the UI shows the new role but RLS still enforces the old
-one (or vice versa).
+`is_super_admin()` and `get_my_branch_ids()`). If the two diverge, the UI shows
+the new role but RLS still enforces the old one (or vice versa).
 
-**Proper fix:** Write an atomic `set_user_role(target_id, new_role, new_branch_id)`
-SECURITY DEFINER RPC that updates both tables in one transaction. Until then, any
-role change must be done directly in the database.
+**Rule:** Build `set_user_role(target_id, new_role, new_branch_id)` SECURITY DEFINER
+RPC (atomic, updates both tables in one transaction) before doing any role change
+via UI or DB.
 
 ---
 
