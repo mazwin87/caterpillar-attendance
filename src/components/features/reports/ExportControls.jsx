@@ -49,9 +49,8 @@ function buildPDFHtml(records, branchName, startDate, endDate) {
   `
 }
 
-export default function ExportControls({ records, branches, filterBranch, startDate, endDate }) {
-  if (records.length === 0) return null
-
+// Named export — used by desktop to wire export buttons into PageHeader
+export function buildExportHandlers({ records, branches, filterBranch, startDate, endDate }) {
   function handleCSV() {
     const headers = ['Date', 'Name', 'Student No', 'Branch', 'Class', 'Status', 'Absence Reason', 'Scan Time']
     const rows = records.map(r => [
@@ -74,6 +73,13 @@ export default function ExportControls({ records, branches, filterBranch, startD
     openPrintWindow(buildPDFHtml(records, branchName, startDate, endDate))
   }
 
+  return { handleCSV, handlePDF }
+}
+
+// Default export — used by mobile view
+export default function ExportControls({ records, branches, filterBranch, startDate, endDate }) {
+  if (records.length === 0) return null
+  const { handleCSV, handlePDF } = buildExportHandlers({ records, branches, filterBranch, startDate, endDate })
   return (
     <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
       <Button variant="secondary" onClick={handleCSV} style={{ flex: 1, padding: '10px', fontSize: 13 }}>

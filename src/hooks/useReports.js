@@ -14,6 +14,7 @@ export function useReports() {
   const [filterBranch, setFilterBranch] = useState('')
   const [startDate, setStartDate]       = useState(weekAgo)
   const [endDate, setEndDate]           = useState(today)
+  const [reportType, setReportType]     = useState('attendance-log')
 
   useEffect(() => {
     getBranches().then(setBranches)
@@ -38,12 +39,30 @@ export function useReports() {
     return acc
   }, {})
 
+  // Single source — used by Slot A metric cards and future Slot C charts
+  const total   = records.length
+  const present = records.filter(r => r.status === 'PRESENT').length
+  const late    = records.filter(r => r.status === 'LATE').length
+  const absent  = records.filter(r => r.status === 'ABSENT').length
+  const holiday = records.filter(r => r.status === 'HOLIDAY').length
+  const pct     = n => total > 0 ? Math.round((n / total) * 100) : 0
+
+  const metrics = {
+    total,
+    present,  presentPct:  pct(present),
+    late,     latePct:     pct(late),
+    absent,   absentPct:   pct(absent),
+    holiday,  holidayPct:  pct(holiday),
+  }
+
   return {
     branches, records, grouped,
     loading, searched,
     filterBranch, setFilterBranch,
     startDate, setStartDate,
     endDate, setEndDate,
+    reportType, setReportType,
+    metrics,
     fetchRecords,
   }
 }
