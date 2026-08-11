@@ -20,7 +20,7 @@ const ADD_DEFAULTS = {
 const EDIT_FIELDS = ['name', 'age_group', 'date_of_birth', 'monthly_fee']
 
 // mode: 'add' | 'edit'
-export default function StudentForm({ mode = 'add', initialData = {}, branches = [], saving, onSave, onClose, onBranchSelect }) {
+export default function StudentForm({ mode = 'add', initialData = {}, branches = [], saving, onSave, onClose, onBranchSelect, variant = 'bottom' }) {
   const defaults = mode === 'add' ? ADD_DEFAULTS : Object.fromEntries(EDIT_FIELDS.map(k => [k, initialData[k] ?? '']))
   const [form, setForm]     = useState(defaults)
   const [errors, setErrors] = useState({})
@@ -53,7 +53,7 @@ export default function StudentForm({ mode = 'add', initialData = {}, branches =
   }
 
   return (
-    <Modal onClose={onClose}>
+    <Modal onClose={onClose} variant={variant}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
         <div style={{ fontSize: 18, fontWeight: 500, color: 'var(--text)' }}>
           {mode === 'add' ? 'Add student' : 'Edit student'}
