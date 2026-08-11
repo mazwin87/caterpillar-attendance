@@ -1,6 +1,8 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { useState, useEffect } from 'react'
-import Navbar from './components/Navbar'
+import MobileShell from './components/layout/MobileShell'
+import DesktopShell from './components/layout/DesktopShell'
+import { useMediaQuery } from './hooks/useMediaQuery'
 import Scanner from './components/Scanner'
 import Dashboard from './components/Dashboard'
 import Students from './components/Students'
@@ -23,6 +25,7 @@ export default function App() {
   const { lang, setLang, t } = useLanguage()
   const [session, setSession] = useState(null)
   const [checking, setChecking] = useState(true)
+  const isDesktop = useMediaQuery('(min-width: 1024px)')
 
   useEffect(() => {
     const s = getSession()
@@ -83,26 +86,28 @@ export default function App() {
             ? <Login onLogin={handleLogin} />
             : session.must_change_password
             ? <ChangePassword session={session} onDone={handlePasswordChanged} />
-            : (
-              <div style={{ minHeight: '100vh', background: 'var(--bg)' }}>
-                <Routes>
-                  <Route path="/" element={<Navigate to="/scanner" replace />} />
-                  <Route path="/scanner"   element={<Scanner lang={lang} setLang={setLang} t={t} session={session} />} />
-                  <Route path="/dashboard" element={<Dashboard t={t} session={session} isAdmin={isAdmin} onLogout={handleLogout} />} />
-                  <Route path="/students"  element={<Students t={t} session={session} />} />
-                  <Route path="/holidays"  element={<Holidays t={t} isAdmin={isAdmin} />} />
-                  <Route path="/events"    element={<Events t={t} />} />
-                  {isAdmin && <Route path="/admin"          element={<Admin session={session} />} />}
-                  {isAdmin && <Route path="/reports"        element={<Reports t={t} />} />}
-                  {isAdmin && <Route path="/fees"           element={<Fees session={session} />} />}
-                  {isAdmin && <Route path="/import"         element={<Importer session={session} />} />}
-                  {isAdmin && <Route path="/manual-receipt" element={<ManualReceipt session={session} />} />}
-                  {isAdmin && <Route path="/manage-users"   element={<ManageUsers session={session} />} />}
-                  <Route path="*" element={<Navigate to="/scanner" replace />} />
-                </Routes>
-                <Navbar t={t} isAdmin={isAdmin} session={session} onLogout={handleLogout} />
-              </div>
-            )
+            : (() => {
+                const Shell = isDesktop ? DesktopShell : MobileShell
+                return (
+                  <Shell t={t} isAdmin={isAdmin} session={session} onLogout={handleLogout}>
+                    <Routes>
+                      <Route path="/" element={<Navigate to="/scanner" replace />} />
+                      <Route path="/scanner"   element={<Scanner lang={lang} setLang={setLang} t={t} session={session} />} />
+                      <Route path="/dashboard" element={<Dashboard t={t} session={session} isAdmin={isAdmin} onLogout={handleLogout} />} />
+                      <Route path="/students"  element={<Students t={t} session={session} />} />
+                      <Route path="/holidays"  element={<Holidays t={t} isAdmin={isAdmin} />} />
+                      <Route path="/events"    element={<Events t={t} />} />
+                      {isAdmin && <Route path="/admin"          element={<Admin session={session} />} />}
+                      {isAdmin && <Route path="/reports"        element={<Reports t={t} />} />}
+                      {isAdmin && <Route path="/fees"           element={<Fees session={session} />} />}
+                      {isAdmin && <Route path="/import"         element={<Importer session={session} />} />}
+                      {isAdmin && <Route path="/manual-receipt" element={<ManualReceipt session={session} />} />}
+                      {isAdmin && <Route path="/manage-users"   element={<ManageUsers session={session} />} />}
+                      <Route path="*" element={<Navigate to="/scanner" replace />} />
+                    </Routes>
+                  </Shell>
+                )
+              })()
         } />
       </Routes>
     </BrowserRouter>
