@@ -175,11 +175,15 @@ export default function FeesDesktopView({
 
   const isEmpty = displayUnpaid.length === 0 && displayPaid.length === 0
 
+  const selectedBranchName = filterBranch ? branches.find(b => b.id === filterBranch)?.name : null
+  const pageTitle    = selectedBranchName ? `Fee of ${selectedBranchName}` : 'Fees'
+  const pageSubtitle = `${filterMonth} ${filterYear}`
+
   return (
     <div style={{ minHeight: '100%', display: 'flex', flexDirection: 'column' }}>
       <PageHeader
-        title="Fees"
-        subtitle={`${filterMonth} ${filterYear}`}
+        title={pageTitle}
+        subtitle={pageSubtitle}
       />
 
       <div style={{ flex: 1, display: 'flex' }}>
