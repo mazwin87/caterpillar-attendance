@@ -62,8 +62,13 @@ export default function StudentsDesktopView({
     setEditStudent(null)
   }
 
-  async function handleDeactivate(studentId) {
-    if (!window.confirm('Deactivate this student? They will no longer appear in attendance.')) return
+  function copyTelegramLink(studentId) {
+    navigator.clipboard.writeText(`https://t.me/caterpillarAttendanceBot?start=${studentId}`)
+    alert('Telegram link copied!')
+  }
+
+  async function handleDelete(studentId) {
+    if (!window.confirm('Delete this student?')) return
     try {
       await remove(studentId)
     } catch (err) {
@@ -138,9 +143,10 @@ export default function StudentsDesktopView({
       key: 'actions', label: '', sortable: false,
       render: (row) => (
         <span style={{ display: 'flex', gap: 6 }}>
-          <button onClick={() => openQR(row._student)} style={rowBtn}>QR</button>
-          <button onClick={() => openEdit(row._student)} style={rowBtn}>Edit</button>
-          <button onClick={() => handleDeactivate(row.id)} style={rowBtnDanger}>Deactivate</button>
+          <button onClick={() => copyTelegramLink(row.id)} style={rowBtn}>📱 Telegram</button>
+          <button onClick={() => openQR(row._student)} style={rowBtn}>🔲 QR</button>
+          <button onClick={() => openEdit(row._student)} style={rowBtn}>✏️ Edit</button>
+          <button onClick={() => handleDelete(row.id)} style={rowBtnDanger}>🗑️ Delete</button>
         </span>
       ),
     },
