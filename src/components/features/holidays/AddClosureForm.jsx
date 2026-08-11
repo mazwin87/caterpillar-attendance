@@ -3,7 +3,7 @@ import { Modal, Input, Button } from '../../ui'
 
 const DEFAULTS = { date: '', end_date: '', label: '' }
 
-export default function AddClosureForm({ saving, onSave, onClose }) {
+export default function AddClosureForm({ saving, onSave, onClose, variant = 'bottom' }) {
   const [form, setForm] = useState(DEFAULTS)
 
   function setField(key, value) {
@@ -17,7 +17,7 @@ export default function AddClosureForm({ saving, onSave, onClose }) {
   }
 
   return (
-    <Modal onClose={onClose}>
+    <Modal onClose={onClose} variant={variant}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
         <div style={{ fontSize: 18, fontWeight: 500, color: 'var(--text)' }}>Add school closure</div>
         <Button variant="ghost" onClick={onClose} style={{ fontSize: 22, padding: 4, lineHeight: 1 }}>×</Button>

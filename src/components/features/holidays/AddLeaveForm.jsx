@@ -3,7 +3,7 @@ import { Modal, Select, Input, Button } from '../../ui'
 
 const DEFAULTS = { student_id: '', branch_id: '', start_date: '', end_date: '', reason: '' }
 
-export default function AddLeaveForm({ students, branches, saving, onSave, onClose }) {
+export default function AddLeaveForm({ students, branches, saving, onSave, onClose, variant = 'bottom' }) {
   const [form, setForm] = useState(DEFAULTS)
 
   function setField(key, value) {
@@ -17,7 +17,7 @@ export default function AddLeaveForm({ students, branches, saving, onSave, onClo
   }
 
   return (
-    <Modal onClose={onClose}>
+    <Modal onClose={onClose} variant={variant}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
         <div style={{ fontSize: 18, fontWeight: 500, color: 'var(--text)' }}>Add student leave</div>
         <Button variant="ghost" onClick={onClose} style={{ fontSize: 22, padding: 4, lineHeight: 1 }}>×</Button>

@@ -9,7 +9,7 @@ function toggleItem(arr, item) {
 
 const EMPTY_FORM = { name: '', date: '', branches: [], age_groups: [] }
 
-export default function EventForm({ branches, saving, onSave, onClose }) {
+export default function EventForm({ branches, saving, onSave, onClose, variant = 'bottom' }) {
   const [form, setForm] = useState(EMPTY_FORM)
 
   async function handleSubmit(e) {
@@ -21,7 +21,7 @@ export default function EventForm({ branches, saving, onSave, onClose }) {
   }
 
   return (
-    <Modal onClose={onClose}>
+    <Modal onClose={onClose} variant={variant}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
         <div style={{ fontSize: 18, fontWeight: 500, color: 'var(--text)' }}>Add event</div>
         <button onClick={onClose} style={{ background: 'none', border: 'none', fontSize: 22, color: 'var(--muted)', cursor: 'pointer', lineHeight: 1 }}>×</button>
